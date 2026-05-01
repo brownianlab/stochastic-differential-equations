@@ -1,11 +1,11 @@
 # Stochastic Differential Equations  
 ### *A First-Principles Approach to Stochastic Differential Equations and Quantitative Finance*
 
-🌐 **Live Site:** https://brownianlab.github.io/stochastic-differential-equations/
+**Live Site:** https://brownianlab.github.io/stochastic-differential-equations/
 
 ---
 
-## 🧭 Overview
+## Overview
 
 This project is a **modern, web-native textbook on stochastic differential equations (SDEs)** designed for graduate students, quantitative researchers, and practitioners.
 
@@ -20,7 +20,7 @@ Stochastic differential equations model systems driven by randomness and are cen
 
 ---
 
-## 🎯 Philosophy
+## Philosophy
 
 This book is built around three pillars:
 
@@ -42,7 +42,7 @@ This book is built around three pillars:
 
 ---
 
-## 🧱 Course Structure
+## Course Structure
 
 ### **Part I — Foundations**
 - Chapter 1 — Random Walks to Brownian Motion  
