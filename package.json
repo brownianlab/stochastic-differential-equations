@@ -1,0 +1,44 @@
+{
+  "name": "sde-web-book",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "docusaurus start",
+    "build": "docusaurus build",
+    "serve": "docusaurus serve",
+    "clear": "docusaurus clear"
+  },
+  "dependencies": {
+    "@docusaurus/core": "latest",
+    "@docusaurus/preset-classic": "latest",
+    "@mdx-js/react": "latest",
+    "clsx": "latest",
+    "d3-scale": "latest",
+    "d3-shape": "latest",
+    "katex": "latest",
+    "prism-react-renderer": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "recharts": "latest",
+    "remark-math": "latest",
+    "rehype-katex": "latest",
+    "@docusaurus/theme-mermaid": "latest"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "latest",
+    "@docusaurus/tsconfig": "latest",
+    "typescript": "latest"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 3 chrome version",
+      "last 3 firefox version",
+      "last 5 safari version"
+    ]
+  }
+}

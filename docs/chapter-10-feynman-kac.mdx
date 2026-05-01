@@ -1,0 +1,271 @@
+---
+id: chapter-10-feynman-kac
+title: Chapter 10 — The Feynman–Kac Formula
+sidebar_label: '10. Feynman–Kac'
+---
+
+import FeynmanKacDemo from '@site/src/components/FeynmanKacDemo';
+import {
+  MotivationBox,
+  GeometryBox,
+  TheoremBox,
+  ProofBox,
+  FinanceBox,
+  ProblemBox,
+  SolutionBox,
+  WarningBox,
+} from '@site/src/components/CourseBoxes';
+
+# Chapter 10 — The Feynman–Kac Formula
+
+<MotivationBox title="Guiding question">
+  Every PDE of the form $\partial_t u + \mathcal L u - c u = -f$ has a solution that can be written
+  as a conditional expectation. What is the precise connection, and how does it make numerical pricing
+  by Monte Carlo and PDE methods equivalent?
+</MotivationBox>
+
+The Feynman–Kac formula is one of the deepest results connecting probability and analysis. It says: the solution to a certain class of backward parabolic PDEs is a conditional expectation of a functional of a diffusion. This has two directions of impact:
+
+- **Analytical**: hard expectations become tractable PDEs.
+- **Probabilistic**: hard PDEs become tractable Monte Carlo simulations.
+
+In finance, it is the rigorous foundation behind "price = expectation."
+
+---
+
+## 10.1 Setup
+
+Fix a terminal time $T > 0$ and a diffusion:
+
+$$
+dX_t = b(t,X_t)\,dt + \sigma(t,X_t)\,dW_t.
+$$
+
+Define the **Feynman–Kac functional**:
+
+$$
+u(t,x) = \mathbb E\!\left[\exp\!\left(-\int_t^T c(s,X_s)\,ds\right)g(X_T) + \int_t^T\exp\!\left(-\int_t^s c(r,X_r)\,dr\right)f(s,X_s)\,ds\ \Bigg|\ X_t = x\right].
+$$
+
+Here:
+- $g$: terminal payoff
+- $f$: running payoff (or source term)
+- $c$: discount rate (or killing rate)
+
+---
+
+## 10.2 The Feynman–Kac theorem
+
+<TheoremBox title="Feynman–Kac formula">
+Under suitable regularity conditions, the function $u(t,x)$ defined above is the unique classical solution to the backward PDE:
+
+$$
+\partial_t u + b(t,x)\,\partial_x u + \tfrac12\sigma(t,x)^2\,\partial_{xx}u - c(t,x)\,u + f(t,x) = 0,
+$$
+
+on $[0,T)\times\mathbb R$, with terminal condition $u(T,x) = g(x)$.
+</TheoremBox>
+
+<ProofBox title="Proof via Itô's formula">
+Define $Y_t = e^{-\int_0^t c(s,X_s)\,ds}u(t,X_t) + \int_0^t e^{-\int_0^s c}\,f(s,X_s)\,ds$.
+
+We want to show $Y_t$ is a martingale. By Itô's formula applied to $v(t,x) = e^{-\int_0^t c\,ds}u(t,x)$:
+
+$$
+dY_t = e^{-\int_0^t c\,ds}\!\left[(\partial_t u + b\partial_x u + \tfrac12\sigma^2\partial_{xx}u - cu + f)\,dt + \sigma\partial_x u\,dW_t\right].
+$$
+
+If $u$ solves the PDE, the $dt$ coefficient vanishes, leaving $dY_t = (\text{pure stochastic integral})$. A stochastic integral is a local martingale. Under integrability, $Y_t$ is a true martingale.
+
+**Terminal condition:** $Y_T = e^{-\int_0^T c\,ds}g(X_T) + \int_0^T e^{-\int_0^s c}f(s,X_s)\,ds$.
+
+**At time $t$:** $\mathbb E[Y_T\mid\mathcal F_t] = Y_t$ (martingale). Rewriting gives $u(t,X_t) = \mathbb E[\ldots\mid X_t]$.
+</ProofBox>
+
+<FeynmanKacDemo />
+
+---
+
+## 10.3 The pure terminal payoff case
+
+In the simplest case $c = 0$, $f = 0$, the Feynman–Kac formula reduces to:
+
+$$
+u(t,x) = \mathbb E[g(X_T)\mid X_t = x],
+$$
+
+which solves:
+
+$$
+\partial_t u + b(t,x)\partial_x u + \tfrac12\sigma(t,x)^2\partial_{xx}u = 0,\qquad u(T,x) = g(x).
+$$
+
+For pure Brownian motion ($b=0$, $\sigma=1$), this is the heat equation $\partial_t u = -\frac12\partial_{xx}u$ (note the sign: running backward from $T$ to $0$). The solution is convolution with the Gaussian kernel:
+
+$$
+u(0,x) = \frac{1}{\sqrt{2\pi T}}\int_{-\infty}^\infty g(y)\,e^{-(x-y)^2/(2T)}\,dy.
+$$
+
+This is exactly the smoothing property of the heat equation — the Brownian motion "averages" the terminal payoff over Gaussian fluctuations.
+
+---
+
+## 10.4 Discounted terminal payoff
+
+With discount rate $c = r$ (constant) and $f=0$:
+
+$$
+u(t,x) = e^{-r(T-t)}\mathbb E[g(X_T)\mid X_t = x].
+$$
+
+The PDE becomes:
+
+$$
+\partial_t u + b\partial_x u + \tfrac12\sigma^2\partial_{xx}u - ru = 0.
+$$
+
+For GBM under $\mathbb Q$ ($b = rx$, $\sigma = \sigma x$): this is precisely the **Black–Scholes PDE**. The Feynman–Kac formula proves that the Black–Scholes price equals the risk-neutral discounted expectation.
+
+<GeometryBox title="Feynman–Kac as a dictionary">
+The Feynman–Kac correspondence is a dictionary:
+
+| Probability side | PDE side |
+|---|---|
+| Conditional expectation $\mathbb E[g(X_T)\mid X_t = x]$ | Solution $u(t,x)$ of the backward PDE |
+| SDE coefficients $b$, $\sigma$ | PDE operator $b\partial_x + \frac12\sigma^2\partial_{xx}$ |
+| Terminal condition $g$ | Boundary data $u(T,x) = g(x)$ |
+| Discount rate $c$ | Killing term $-cu$ in PDE |
+| Running cost $f$ | Source term in PDE |
+
+Every pricing problem can be attacked from either side: solve the PDE analytically, or simulate the SDE by Monte Carlo.
+</GeometryBox>
+
+---
+
+## 10.5 Worked examples
+
+### Example 1: European call option
+
+$X = S$ follows GBM under $\mathbb Q$, $g(S) = (S-K)^+$, $c = r$.
+
+Feynman–Kac: $C(t,S) = e^{-r(T-t)}\mathbb E^{\mathbb Q}[(S_T-K)^+\mid S_t = S]$.
+
+This expectation evaluates to the Black–Scholes formula (Chapter 7).
+
+### Example 2: Zero-coupon bond in CIR model
+
+$r_t$ follows CIR ($dr = \kappa(\theta-r)\,dt + \sigma\sqrt{r}\,dW$). The zero-coupon bond price is:
+
+$$
+P(t,r) = \mathbb E\!\left[\exp\!\left(-\int_t^T r_s\,ds\right)\Bigg| r_t = r\right].
+$$
+
+Feynman–Kac says $P$ solves:
+
+$$
+\partial_t P + \kappa(\theta-r)\partial_r P + \tfrac12\sigma^2 r\,\partial_{rr}P - rP = 0,
+\quad P(T,r) = 1.
+$$
+
+This is the CIR bond pricing PDE. The explicit solution is $P(t,r) = A(\tau)e^{-B(\tau)r}$, where $\tau = T-t$ and $A,B$ are computed by solving the Riccati ODE for $B$.
+
+### Example 3: Running maximum
+
+Let $M_T = \max_{0\le s\le T}W_s$. Can we find $\mathbb E[f(M_T)]$?
+
+This is not directly a Feynman–Kac problem (the running maximum is not Markovian on its own). But $(W_t, M_t)$ jointly is Markovian, and Feynman–Kac applies in two dimensions.
+
+---
+
+## 10.6 The Kolmogorov backward equation as a special case
+
+For $c=0$, $f=0$, and $g = \mathbf 1_{(-\infty,y]}$ (cumulative distribution), Feynman–Kac gives:
+
+$$
+u(t,x) = \mathbb P(X_T \le y\mid X_t = x).
+$$
+
+This solves the Kolmogorov backward equation $\partial_t u + \mathcal L_x u = 0$. Setting $t=0$ gives the transition probability $\mathbb P(X_T\le y\mid X_0=x)$ — the fundamental solution of the backward equation.
+
+---
+
+## 10.7 Monte Carlo versus PDE: two algorithms
+
+**Monte Carlo (probabilistic side):**
+1. Simulate $N$ paths of $X$ from $x$ to time $T$ using Euler–Maruyama.
+2. Compute $g(X_T^{(k)})$ for each path $k$.
+3. Estimate $u(0,x)\approx \frac{1}{N}\sum_k g(X_T^{(k)})$.
+
+Error: $O(1/\sqrt{N})$ — statistical, independent of dimension.
+
+**PDE solver (analytical side):**
+1. Discretize the PDE on a grid $(t_i, x_j)$.
+2. Apply finite differences or finite elements.
+3. March backward from $T$ to $0$.
+
+Error: $O(\Delta t + \Delta x^2)$ — deterministic, but grid size explodes in high dimensions (curse of dimensionality).
+
+Feynman–Kac guarantees both methods converge to the same answer.
+
+<FinanceBox title="When to use Monte Carlo vs PDE">
+  **Use PDE when:** 1D or 2D problem (e.g., European option on one stock), high accuracy needed,
+  Greeks required analytically (differentiate PDE solution), early exercise (American options via
+  free boundary PDE).
+
+  **Use Monte Carlo when:** High-dimensional problem (basket, path-dependent), flexible payoff
+  structure, convergence guarantee regardless of dimension, embarrassingly parallelizable.
+
+  Dimension $d\ge 4$: Monte Carlo dominates. Dimension $d\le 3$: PDE methods are often faster and
+  more precise.
+</FinanceBox>
+
+---
+
+## 10.8 Problems
+
+<ProblemBox title="Problem 1: Heat equation">
+For $dX = dW$ (pure BM) and $g(x) = x^2$, use Feynman–Kac to find $u(0,x) = \mathbb E[(x+W_T)^2]$ and verify it solves $\partial_t u + \frac12\partial_{xx}u = 0$ with $u(T,x) = x^2$.
+</ProblemBox>
+
+<ProblemBox title="Problem 2: Discounting">
+For $dX = 0\cdot dt + dW$ (pure BM) and $g(x) = e^x$, $c = \frac12$, compute $u(0,x) = \mathbb E[e^{-T/2}e^{x+W_T}]$. Verify it solves the PDE with discounting.
+</ProblemBox>
+
+<ProblemBox title="Problem 3: Running payoff">
+For $dX = dW$, $g=0$, $f(s,x)=1$, $c=0$: the Feynman–Kac formula gives $u(t,x) = \mathbb E[\int_t^T 1\,ds\mid X_t=x] = T-t$. Verify $u(t,x)=T-t$ satisfies the PDE.
+</ProblemBox>
+
+<ProblemBox title="Problem 4: Binary option">
+Using Feynman–Kac, show that the price of a binary call (pays $1$ if $S_T > K$, else $0$) under Black–Scholes is $e^{-rT}N(d_2)$, and identify which PDE it solves.
+</ProblemBox>
+
+---
+
+## 10.9 Selected solutions
+
+<SolutionBox title="Solution 1">
+$u(0,x) = \mathbb E[(x+W_T)^2] = x^2 + \mathbb E[2xW_T] + \mathbb E[W_T^2] = x^2 + 0 + T = x^2 + T$.
+
+Check PDE: $u(t,x) = x^2 + (T-t)$ (from Feynman–Kac, the time-dependent version). Then $\partial_t u = -1$ and $\frac12\partial_{xx}u = \frac12\cdot 2 = 1$. So $\partial_t u + \frac12\partial_{xx}u = -1+1=0$. ✓
+</SolutionBox>
+
+<SolutionBox title="Solution 2">
+$u(0,x) = e^{-T/2}\mathbb E[e^{x+W_T}] = e^{-T/2}\cdot e^x\cdot e^{T/2} = e^x$. (Using $\mathbb E[e^{W_T}] = e^{T/2}$.)
+
+The PDE is $\partial_t u + \frac12\partial_{xx}u - \frac12 u = 0$, $u(T,x) = e^x$. With $u = e^x$ (constant in $t$): $\partial_t u = 0$, $\frac12\partial_{xx}u = \frac12 e^x$, $-\frac12 u = -\frac12 e^x$. Sum $= 0$. ✓
+</SolutionBox>
+
+---
+
+## 10.10 What this chapter gives you
+
+| Formula | Meaning |
+|---|---|
+| $u(t,x) = \mathbb E[e^{-\int c\,ds}g(X_T)+\ldots\mid X_t=x]$ | Conditional expectation = PDE solution |
+| $\partial_t u + \mathcal Lu - cu + f = 0$ | The backward PDE for $u$ |
+| $u(T,x) = g(x)$ | Terminal/boundary condition |
+| Black–Scholes as Feynman–Kac | $C = e^{-r\tau}\mathbb E^{\mathbb Q}[(S_T-K)^+\mid S_t]$ |
+| Bond pricing as Feynman–Kac | $P = \mathbb E[\exp(-\int r\,ds)\mid r_t]$ |
+| MC vs PDE | Two algorithms for the same quantity |
+
+Part IV now uses this foundation to study more advanced models: stochastic volatility, interest rate curves, and numerical implementation.

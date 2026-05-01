@@ -1,0 +1,750 @@
+---
+id: chapter-01-random-walks-to-brownian-motion
+title: Chapter 1 — From Random Walks to Brownian Motion
+sidebar_label: '1. Random Walks → Brownian Motion'
+---
+
+import RandomWalkScaling from '@site/src/components/RandomWalkScaling';
+import BrownianPathSimulator from '@site/src/components/BrownianPathSimulator';
+import CovarianceHeatmap from '@site/src/components/CovarianceHeatmap';
+import QuadraticVariationDemo from '@site/src/components/QuadraticVariationDemo';
+import {
+  MotivationBox,
+  GeometryBox,
+  TheoremBox,
+  ProofBox,
+  FinanceBox,
+  ProblemBox,
+  SolutionBox,
+  WarningBox,
+} from '@site/src/components/CourseBoxes';
+
+# Chapter 1 — From Random Walks to Brownian Motion
+
+<MotivationBox title="Guiding question">
+  How can a process be continuous in time, random at every scale, and still mathematically tractable
+  enough to support calculus, pricing, and risk management?
+</MotivationBox>
+
+This chapter builds Brownian motion from the discrete random walk. The point is not to introduce a mysterious object by definition, but to discover why this object is almost inevitable once one asks for a non-degenerate continuous-time limit of many small independent shocks.
+
+We will encounter Brownian motion in several equivalent languages:
+
+1. as the scaling limit of random walks;
+2. as a centered Gaussian process with covariance kernel $K(s,t)=\min(s,t)$;
+3. as a continuous martingale with independent stationary increments;
+4. as a random element of path space;
+5. as the canonical source of quadratic variation.
+
+These viewpoints are not decorative. Each one becomes essential later: the scaling limit explains volatility scaling, the Gaussian kernel gives geometry, the martingale property underlies no-arbitrage pricing, and quadratic variation forces Itô calculus.
+
+---
+
+## 1.1 Discrete randomness: the symmetric random walk
+
+Let $(\Omega,\mathcal F,\mathbb P)$ be a probability space. Let
+
+$$
+\xi_1,\xi_2,\ldots
+$$
+
+be independent identically distributed random variables satisfying
+
+$$
+\mathbb P(\xi_k=1)=\mathbb P(\xi_k=-1)=\frac12.
+$$
+
+Define the random walk
+
+$$
+S_n = \sum_{k=1}^n \xi_k, \qquad S_0=0.
+$$
+
+Then
+
+$$
+\mathbb E[S_n]=0,
+\qquad
+\operatorname{Var}(S_n)=n.
+$$
+
+<ProofBox title="Proof">
+Linearity gives
+
+$$
+\mathbb E[S_n]=\sum_{k=1}^n \mathbb E[\xi_k]=0.
+$$
+
+Since the $\xi_k$'s are independent and $\operatorname{Var}(\xi_k)=1$,
+
+$$
+\operatorname{Var}(S_n)
+=\sum_{k=1}^n \operatorname{Var}(\xi_k)
+=n.
+$$
+
+</ProofBox>
+
+The variance grows linearly in the number of steps, so the standard deviation grows like $\sqrt n$. This square-root scaling is the first sign of Brownian geometry.
+
+<GeometryBox title="Geometric meaning of $\sqrt n$">
+  After $n$ independent zero-mean shocks, positive and negative shocks partially cancel. The net
+  displacement is not usually of order $n$, but of order $\sqrt n$. Randomness accumulates like
+  Euclidean length: variances add, standard deviations scale as square roots.
+</GeometryBox>
+
+---
+
+## 1.2 Embedding the walk into continuous time
+
+Fix a time horizon $T>0$. For each integer $n$, divide $[0,T]$ into $n$ intervals of length
+
+$$
+\Delta t = \frac{T}{n}.
+$$
+
+If each shock has size $\sqrt{\Delta t}$, define
+
+$$
+X_t^{(n)}
+= \sqrt{\Delta t}\, S_{\lfloor t/\Delta t\rfloor}.
+$$
+
+At time $t$, approximately $t/\Delta t$ shocks have occurred, so
+
+$$
+\operatorname{Var}\bigl(X_t^{(n)}\bigr)
+= \Delta t\, \left\lfloor \frac{t}{\Delta t}\right\rfloor
+\approx t.
+$$
+
+The scaling $\sqrt{\Delta t}$ is not arbitrary. It is the only natural scaling that keeps the limiting variance finite and nonzero.
+
+<WarningBox title="Why not scale by $\Delta t$?">
+If the shock size were $\Delta t$, then variance over a fixed horizon would be approximately
+
+$$
+\frac{t}{\Delta t}(\Delta t)^2 = t\Delta t \to 0.
+$$
+
+The limit would become deterministic.
+
+</WarningBox>
+
+<WarningBox title="Why not use unscaled shocks?">
+If each shock had fixed size, variance after $t/\Delta t$ shocks would be approximately
+
+$$
+\frac{t}{\Delta t}\to \infty.
+$$
+
+The limiting object would explode.
+
+</WarningBox>
+
+<RandomWalkScaling />
+
+<FinanceBox title="Finance interpretation: square-root-of-time volatility">
+  If independent return shocks accumulate through time, variances add. Therefore volatility scales
+  as $\sqrt T$, not $T$. This is the primitive reason that daily volatility is annualized by
+  multiplying by approximately $\sqrt{252}$, not by $252$.
+</FinanceBox>
+
+---
+
+## 1.3 Donsker's invariance principle
+
+The classical central limit theorem says that for fixed time,
+
+$$
+\frac{S_n}{\sqrt n}\Rightarrow N(0,1).
+$$
+
+Donsker's theorem strengthens this from convergence of random variables to convergence of entire random paths.
+
+<TheoremBox title="Donsker's invariance principle, informal version">
+Let
+
+$$
+X_t^{(n)} = \frac{1}{\sqrt n}S_{\lfloor nt\rfloor}, \qquad 0\le t\le 1,
+$$
+
+with linear interpolation between grid points. Then
+
+$$
+X^{(n)} \Rightarrow W
+$$
+
+as random elements of the path space $C([0,1])$, where $W$ is standard Brownian motion.
+
+</TheoremBox>
+
+The theorem says that Brownian motion is the universal scaling limit of many small independent shocks. The detailed distribution of the shocks is not essential; under suitable moment assumptions, the same limiting process appears.
+
+<GeometryBox title="Path-space viewpoint">
+For each $\omega\in\Omega$, the map
+
+$$
+t\mapsto X_t^{(n)}(\omega)
+$$
+
+is a curve. Donsker's theorem says the probability distribution on these curves converges to a probability distribution on continuous curves. Brownian motion is not one curve; it is a probability law on path space.
+
+</GeometryBox>
+
+<BrownianPathSimulator />
+
+---
+
+## 1.4 Definition of Brownian motion
+
+A stochastic process $W=(W_t)_{t\ge0}$ is called a standard Brownian motion if:
+
+1. $W_0=0$ almost surely.
+2. For $0\le t_0<t_1<\cdots<t_m$, the increments
+
+$$
+W_{t_1}-W_{t_0},\; W_{t_2}-W_{t_1},\ldots, W_{t_m}-W_{t_{m-1}}
+$$
+
+are independent. 3. For $0\le s<t$,
+
+$$
+W_t-W_s\sim N(0,t-s).
+$$
+
+4. The sample paths $t\mapsto W_t(\omega)$ are continuous almost surely.
+
+<WarningBox title="Continuity is a path property, not a marginal property">
+  Knowing only that each $W_t$ is normal does not imply that paths are continuous. Brownian motion
+  is a process-level object. Its defining properties constrain the joint distribution of all times,
+  not merely each isolated time.
+</WarningBox>
+
+---
+
+## 1.5 Brownian motion as a Gaussian process
+
+A process $(X_t)_{t\in I}$ is a Gaussian process if every finite vector
+
+$$
+(X_{t_1},\ldots,X_{t_m})
+$$
+
+has a multivariate normal distribution.
+
+Brownian motion is a centered Gaussian process with covariance function
+
+$$
+K(s,t)=\operatorname{Cov}(W_s,W_t)=\min(s,t).
+$$
+
+<ProofBox title="Covariance derivation">
+Assume $s\le t$. Then
+
+$$
+W_t = W_s + (W_t-W_s).
+$$
+
+The increment $W_t-W_s$ is independent of $W_s$, and has mean zero. Therefore
+
+$$
+\begin{aligned}
+\operatorname{Cov}(W_s,W_t)
+&=\operatorname{Cov}\bigl(W_s, W_s+(W_t-W_s)\bigr)\\
+&=\operatorname{Var}(W_s)+\operatorname{Cov}(W_s,W_t-W_s)\\
+&=s+0\\
+&=s.
+\end{aligned}
+$$
+
+By symmetry,
+
+$$
+\operatorname{Cov}(W_s,W_t)=\min(s,t).
+$$
+
+</ProofBox>
+
+<CovarianceHeatmap />
+
+<GeometryBox title="Covariance as geometry">
+  For a centered Gaussian vector, the covariance matrix determines the shape of its probability
+  ellipsoid. For Brownian motion, the kernel $K(s,t)=\min(s,t)$ says that later values contain the
+  accumulated history of earlier values. The process is not a collection of independent normal
+  variables; it is a highly structured random curve.
+</GeometryBox>
+
+---
+
+## 1.6 Martingale property
+
+Let $(\mathcal F_t)_{t\ge0}$ be the natural filtration of Brownian motion:
+
+$$
+\mathcal F_t = \sigma(W_s:0\le s\le t).
+$$
+
+This represents the information generated by observing the path up to time $t$.
+
+<TheoremBox title="Brownian motion is a martingale">
+For $0\le s\le t$,
+
+$$
+\mathbb E[W_t\mid \mathcal F_s]=W_s.
+$$
+
+</TheoremBox>
+
+<ProofBox title="Proof">
+Write
+
+$$
+W_t = W_s + (W_t-W_s).
+$$
+
+Since $W_s$ is $\mathcal F_s$-measurable,
+
+$$
+\mathbb E[W_s\mid\mathcal F_s]=W_s.
+$$
+
+Since $W_t-W_s$ is independent of $\mathcal F_s$ and has mean zero,
+
+$$
+\mathbb E[W_t-W_s\mid\mathcal F_s]=0.
+$$
+
+Therefore
+
+$$
+\mathbb E[W_t\mid\mathcal F_s]=W_s.
+$$
+
+</ProofBox>
+
+<FinanceBox title="No predictable instantaneous gain">
+  The martingale property says Brownian motion has no drift that can be predicted from its own past.
+  In arbitrage-free pricing, discounted asset prices are martingales under a risk-neutral measure.
+  Brownian martingales are therefore the primitive noise sources for continuous-time pricing models.
+</FinanceBox>
+
+---
+
+## 1.7 Markov property
+
+Brownian motion also satisfies a Markov property. Conditional on the present value $W_s$, the future evolution is independent of the earlier path.
+
+More precisely, for bounded measurable $f$,
+
+$$
+\mathbb E[f(W_t)\mid \mathcal F_s]
+= \mathbb E[f(W_t)\mid W_s],
+\qquad s\le t.
+$$
+
+Since
+
+$$
+W_t = W_s + (W_t-W_s),
+$$
+
+and $W_t-W_s\sim N(0,t-s)$, the conditional distribution of $W_t$ given $W_s=x$ is
+
+$$
+W_t\mid W_s=x \sim N(x,t-s).
+$$
+
+<GeometryBox title="Markov geometry">
+  The past path matters only through its endpoint. From the current point $(s,W_s)$, the future is a
+  fresh Brownian cloud translated by $W_s$. This is why Brownian transition densities satisfy heat
+  equations.
+</GeometryBox>
+
+---
+
+## 1.8 Scaling invariance
+
+For $c>0$, define
+
+$$
+\widetilde W_t = \frac{1}{\sqrt c}W_{ct}.
+$$
+
+<TheoremBox title="Brownian scaling">
+  The process $\widetilde W$ is again a standard Brownian motion.
+</TheoremBox>
+
+<ProofBox title="Proof sketch">
+We check the defining properties.
+
+First,
+
+$$
+\widetilde W_0=0.
+$$
+
+For $s<t$,
+
+$$
+\widetilde W_t-\widetilde W_s
+=\frac{1}{\sqrt c}(W_{ct}-W_{cs}).
+$$
+
+Since
+
+$$
+W_{ct}-W_{cs}\sim N(0,c(t-s)),
+$$
+
+we get
+
+$$
+\widetilde W_t-\widetilde W_s\sim N(0,t-s).
+$$
+
+Independent increments and continuity are inherited from $W$.
+
+</ProofBox>
+
+This scaling property is not just an algebraic curiosity. It says that Brownian motion has no intrinsic time scale. Zooming in produces statistically similar roughness.
+
+---
+
+## 1.9 Path roughness and non-differentiability
+
+For a deterministic differentiable function $f$, small increments satisfy
+
+$$
+f(t+h)-f(t)\approx f'(t)h.
+$$
+
+The increment is order $h$. For Brownian motion,
+
+$$
+W_{t+h}-W_t\sim N(0,h),
+$$
+
+so typical size is order $\sqrt h$. Therefore
+
+$$
+\frac{W_{t+h}-W_t}{h}
+$$
+
+has typical magnitude of order
+
+$$
+\frac{\sqrt h}{h}=\frac1{\sqrt h}\to\infty.
+$$
+
+This heuristic explains why Brownian paths are almost surely nowhere differentiable.
+
+<WarningBox title="Heuristic versus theorem">
+  The above argument explains the scaling obstruction to differentiability. The rigorous theorem is
+  stronger: Brownian paths are almost surely nowhere differentiable. Proving this requires
+  controlling increments over countably many rational intervals and then extending to all times.
+</WarningBox>
+
+---
+
+## 1.10 Quadratic variation
+
+For a partition $\Pi=\{0=t_0<t_1<\cdots<t_n=T\}$, define
+
+$$
+Q_\Pi(W)=\sum_{k=0}^{n-1}(W_{t_{k+1}}-W_{t_k})^2.
+$$
+
+If the mesh $|\Pi|=\max_k(t_{k+1}-t_k)$ tends to zero, then
+
+$$
+Q_\Pi(W)\to T
+$$
+
+in probability, and under suitable nested partitions, almost surely.
+
+<QuadraticVariationDemo />
+
+<ProofBox title="Mean and variance computation for uniform partitions">
+Let $t_k=kT/n$. Then
+
+$$
+\Delta W_k = W_{t_{k+1}}-W_{t_k}\sim N(0,T/n),
+$$
+
+and increments are independent. Hence
+
+$$
+\mathbb E[(\Delta W_k)^2]=T/n.
+$$
+
+Therefore
+
+$$
+\mathbb E\left[\sum_{k=0}^{n-1}(\Delta W_k)^2\right]
+=\sum_{k=0}^{n-1}T/n=T.
+$$
+
+For a normal random variable $Z\sim N(0,\sigma^2)$,
+
+$$
+\operatorname{Var}(Z^2)=2\sigma^4.
+$$
+
+Thus
+
+$$
+\operatorname{Var}\left(\sum_{k=0}^{n-1}(\Delta W_k)^2\right)
+=n\cdot 2(T/n)^2
+=\frac{2T^2}{n}\to0.
+$$
+
+So the quadratic variation converges to $T$ in $L^2$, hence in probability.
+
+</ProofBox>
+
+<GeometryBox title="Why quadratic variation is the birth of Itô calculus">
+Smooth paths have increments of order $\Delta t$, so squared increments are order $(\Delta t)^2$, and their sum vanishes. Brownian increments are order $\sqrt{\Delta t}$, so squared increments are order $\Delta t$, and their sum survives. This surviving second-order term is exactly why stochastic calculus differs from classical calculus.
+</GeometryBox>
+
+---
+
+## 1.11 The symbolic rule $(dW_t)^2=dt$
+
+The expression
+
+$$
+(dW_t)^2=dt
+$$
+
+is not ordinary algebra. It is shorthand for the quadratic variation statement
+
+$$
+\sum (\Delta W_k)^2 \to T.
+$$
+
+Similarly, because Brownian increments are order $\sqrt{dt}$, one informally keeps the products
+
+$$
+(dW_t)^2\sim dt,
+$$
+
+but discards
+
+$$
+dt\,dW_t \sim dt^{3/2},
+\qquad
+(dt)^2\sim dt^2.
+$$
+
+This bookkeeping becomes precise in Itô's formula.
+
+---
+
+## 1.12 Finance-facing interpretation
+
+Consider the model
+
+$$
+dX_t = \mu\,dt + \sigma\,dW_t.
+$$
+
+Over a short interval $\Delta t$, this means approximately
+
+$$
+\Delta X\approx \mu\Delta t+\sigma\sqrt{\Delta t}Z,
+\qquad Z\sim N(0,1).
+$$
+
+The deterministic drift is order $\Delta t$, but the random shock is order $\sqrt{\Delta t}$. Therefore at very short time scales,
+
+$$
+\sqrt{\Delta t}\gg \Delta t.
+$$
+
+<FinanceBox title="Local randomness dominates drift">
+  At high frequency, drift is statistically difficult to estimate because it is smaller than noise
+  at small horizons. Volatility is locally visible; drift is not. This is one reason volatility
+  modeling is often more statistically stable than expected-return modeling.
+</FinanceBox>
+
+---
+
+## 1.13 Equivalent characterizations to remember
+
+Brownian motion may be understood as:
+
+| Viewpoint        | Mathematical object                            | Why it matters                    |
+| ---------------- | ---------------------------------------------- | --------------------------------- |
+| Scaling limit    | $S_{\lfloor nt\rfloor}/\sqrt n\Rightarrow W_t$ | universality, volatility scaling  |
+| Gaussian process | covariance $\min(s,t)$                         | finite-dimensional laws, geometry |
+| Martingale       | $\mathbb E[W_t\mid\mathcal F_s]=W_s$           | no-arbitrage pricing              |
+| Markov process   | future depends on present                      | PDE and transition densities      |
+| Rough path       | quadratic variation $[W]_t=t$                  | Itô calculus                      |
+
+---
+
+## 1.14 Problems
+
+<ProblemBox title="Problem 1: covariance and correlation">
+Let $0<s<t$. Prove
+
+$$
+\operatorname{Cov}(W_s,W_t)=s,
+\qquad
+\operatorname{Corr}(W_s,W_t)=\sqrt{\frac{s}{t}}.
+$$
+
+</ProblemBox>
+
+<ProblemBox title="Problem 2: Brownian bridge preview">
+Compute the conditional distribution of $W_s$ given $W_t=x$, where $0<s<t$. Interpret the conditional mean geometrically.
+</ProblemBox>
+
+<ProblemBox title="Problem 3: drifted Brownian motion">
+Let
+
+$$
+X_t=x_0+\mu t+\sigma W_t.
+$$
+
+Find $\mathbb E[X_t]$, $\operatorname{Var}(X_t)$, and $\operatorname{Cov}(X_s,X_t)$.
+
+</ProblemBox>
+
+<ProblemBox title="Problem 4: quadratic variation of drifted Brownian motion">
+For
+
+$$
+X_t=\mu t+\sigma W_t,
+$$
+
+compute the quadratic variation $[X]_T$.
+
+</ProblemBox>
+
+<ProblemBox title="Problem 5: why ordinary chain rule fails">
+  Assume informally that $dW_t^2=2W_t dW_t$, as in ordinary calculus. Compare this with what Itô's
+  formula will later imply. What term is missing?
+</ProblemBox>
+
+---
+
+## 1.15 Selected solutions
+
+<SolutionBox title="Solution 1">
+For $s<t$, write
+
+$$
+W_t=W_s+(W_t-W_s).
+$$
+
+The second term is independent of $W_s$, so
+
+$$
+\operatorname{Cov}(W_s,W_t)
+=\operatorname{Var}(W_s)=s.
+$$
+
+Since $\operatorname{Var}(W_s)=s$ and $\operatorname{Var}(W_t)=t$,
+
+$$
+\operatorname{Corr}(W_s,W_t)
+=\frac{s}{\sqrt{s}\sqrt t}
+=\sqrt{\frac{s}{t}}.
+$$
+
+</SolutionBox>
+
+<SolutionBox title="Solution 2">
+The vector $(W_s,W_t)$ is jointly Gaussian with mean zero and covariance matrix
+
+$$
+\begin{pmatrix}
+s & s\\
+s & t
+\end{pmatrix}.
+$$
+
+For jointly Gaussian variables,
+
+$$
+\mathbb E[W_s\mid W_t=x]
+=\frac{\operatorname{Cov}(W_s,W_t)}{\operatorname{Var}(W_t)}x
+=\frac{s}{t}x.
+$$
+
+The conditional variance is
+
+$$
+\operatorname{Var}(W_s\mid W_t)
+=s-\frac{s^2}{t}
+=\frac{s(t-s)}{t}.
+$$
+
+Thus
+
+$$
+W_s\mid W_t=x\sim N\left(\frac{s}{t}x,\frac{s(t-s)}{t}\right).
+$$
+
+Geometrically, the conditional mean is the straight line interpolating from $(0,0)$ to $(t,x)$. The remaining variance describes random fluctuation around that line.
+
+</SolutionBox>
+
+<SolutionBox title="Solution 3">
+We have
+
+$$
+\mathbb E[X_t]=x_0+\mu t,
+\qquad
+\operatorname{Var}(X_t)=\sigma^2 t.
+$$
+
+For $s\le t$, constants and deterministic drift do not affect covariance, so
+
+$$
+\operatorname{Cov}(X_s,X_t)=\sigma^2\min(s,t)=\sigma^2 s.
+$$
+
+</SolutionBox>
+
+<SolutionBox title="Solution 4">
+The finite-variation drift $\mu t$ contributes zero quadratic variation. The Brownian part contributes $\sigma^2[W]_T$. Therefore
+
+$$
+[X]_T=\sigma^2T.
+$$
+
+</SolutionBox>
+
+<SolutionBox title="Solution 5">
+Ordinary calculus would suggest no second-order correction. Itô calculus gives
+
+$$
+d(W_t^2)=2W_t\,dW_t+dt.
+$$
+
+The missing term is $dt$, arising from $(dW_t)^2=dt$. This term is the analytic signature of Brownian quadratic variation.
+
+</SolutionBox>
+
+---
+
+## 1.16 What this chapter gives you
+
+You should now understand Brownian motion as a single object with several mutually reinforcing representations:
+
+- a limit of rescaled random walks;
+- a centered Gaussian process with kernel $\min(s,t)$;
+- a martingale and Markov process;
+- a probability law on continuous paths;
+- a rough path with nonzero quadratic variation.
+
+The next chapter constructs the Itô integral
+
+$$
+\int_0^T H_t\,dW_t,
+$$
+
+which is the first step toward solving stochastic differential equations.

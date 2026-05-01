@@ -1,0 +1,291 @@
+---
+id: chapter-06-girsanov
+title: Chapter 6 — Martingales and Change of Measure
+sidebar_label: '6. Girsanov & Change of Measure'
+---
+
+import GirsanovDemo from '@site/src/components/GirsanovDemo';
+import {
+  MotivationBox,
+  GeometryBox,
+  TheoremBox,
+  ProofBox,
+  FinanceBox,
+  ProblemBox,
+  SolutionBox,
+  WarningBox,
+} from '@site/src/components/CourseBoxes';
+
+# Chapter 6 — Martingales and Change of Measure
+
+<MotivationBox title="Guiding question">
+  A drifted Brownian motion $dX = \theta\,dt + dW$ is not a martingale — it has a trend. Can we change
+  the probability measure so that $X$ becomes a martingale? If so, how does the change of measure
+  interact with option pricing?
+</MotivationBox>
+
+Girsanov's theorem says: yes, a drift can be removed by reweighting paths. The reweighting factor — the Radon–Nikodym derivative — is a stochastic exponential built from the drift itself. This is the mathematical engine behind risk-neutral pricing: the risk-neutral measure is obtained by Girsanov's theorem applied to the market price of risk.
+
+---
+
+## 6.1 Equivalent measures and Radon–Nikodym derivatives
+
+Two probability measures $\mathbb P$ and $\mathbb Q$ on $(\Omega,\mathcal F)$ are **equivalent** if they agree on which events have probability zero: $\mathbb P(A)=0\iff\mathbb Q(A)=0$.
+
+For equivalent measures on a finite horizon $[0,T]$, the Radon–Nikodym theorem guarantees the existence of a density:
+
+$$
+\frac{d\mathbb Q}{d\mathbb P}\bigg|_{\mathcal F_T} = Z_T > 0\quad\text{a.s.},
+$$
+
+with $\mathbb E^{\mathbb P}[Z_T] = 1$. For any $\mathcal F_T$-measurable $X$:
+
+$$
+\mathbb E^{\mathbb Q}[X] = \mathbb E^{\mathbb P}[Z_T\,X].
+$$
+
+The conditional Radon–Nikodym derivative defines a $(\mathbb P,\mathcal F_t)$-martingale:
+
+$$
+Z_t = \mathbb E^{\mathbb P}[Z_T\mid\mathcal F_t].
+$$
+
+---
+
+## 6.2 The stochastic exponential
+
+For an adapted process $\theta = (\theta_t)_{0\le t\le T}$ satisfying the **Novikov condition**
+
+$$
+\mathbb E^{\mathbb P}\!\left[\exp\!\left(\tfrac12\int_0^T\theta_t^2\,dt\right)\right] < \infty,
+$$
+
+define the **stochastic exponential** (Doléans–Dade exponential):
+
+$$
+Z_t = \mathcal E_t(\theta)
+:= \exp\!\left(\int_0^t\theta_s\,dW_s - \tfrac12\int_0^t\theta_s^2\,ds\right).
+$$
+
+<TheoremBox title="$Z_t$ is a martingale">
+Under the Novikov condition, $Z_t$ is a $(\mathbb P,\mathcal F_t)$-martingale with $Z_0 = 1$.
+</TheoremBox>
+
+<ProofBox title="SDE for $Z_t$">
+Apply Itô's formula to $f(t,x) = e^x$ where $x = \int_0^t\theta_s\,dW_s - \frac12\int_0^t\theta_s^2\,ds$:
+
+$$
+dZ_t = Z_t\,\theta_t\,dW_t.
+$$
+
+The drift vanishes — $Z_t$ satisfies an SDE with zero drift coefficient. Under the Novikov condition, $Z_t$ is a true $L^2$-martingale (not merely a local martingale).
+</ProofBox>
+
+---
+
+## 6.3 Girsanov's theorem
+
+<TheoremBox title="Girsanov's theorem">
+Let $\theta = (\theta_t)$ be adapted and satisfy the Novikov condition. Define the measure $\mathbb Q$ by
+
+$$
+\frac{d\mathbb Q}{d\mathbb P}\bigg|_{\mathcal F_T} = Z_T = \exp\!\left(\int_0^T\theta_t\,dW_t - \tfrac12\int_0^T\theta_t^2\,dt\right).
+$$
+
+Then $\mathbb Q$ is a probability measure equivalent to $\mathbb P$, and the process
+
+$$
+\widetilde W_t = W_t - \int_0^t\theta_s\,ds
+$$
+
+is a standard Brownian motion under $\mathbb Q$.
+</TheoremBox>
+
+<ProofBox title="Proof sketch">
+By Lévy's characterization theorem, it suffices to show that $\widetilde W_t$ is a $\mathbb Q$-martingale with quadratic variation $[\widetilde W]_t = t$.
+
+**Quadratic variation.** $d\widetilde W_t = dW_t - \theta_t\,dt$, so $(d\widetilde W_t)^2 = (dW_t)^2 = dt$. The quadratic variation is unchanged by Girsanov.
+
+**Martingale.** For $s\le t$, using Bayes' rule under $\mathbb Q$:
+
+$$
+\mathbb E^{\mathbb Q}[\widetilde W_t\mid\mathcal F_s]
+= \frac{\mathbb E^{\mathbb P}[Z_t\widetilde W_t\mid\mathcal F_s]}{Z_s}.
+$$
+
+Write $\widetilde W_t = \widetilde W_s + \int_s^t d\widetilde W_r$. An Itô computation shows $Z_t\widetilde W_t - Z_s\widetilde W_s = \int_s^t(\cdots)\,dW_r$ (pure stochastic integral), so $\mathbb E^{\mathbb P}[Z_t\widetilde W_t-Z_s\widetilde W_s\mid\mathcal F_s]=0$, giving $\mathbb E^{\mathbb Q}[\widetilde W_t\mid\mathcal F_s] = \widetilde W_s$.
+</ProofBox>
+
+<GirsanovDemo />
+
+---
+
+## 6.4 The key formula: drift and measure
+
+Under $\mathbb P$, the process $X_t = \int_0^t\theta_s\,ds + W_t$ has drift $\theta$.
+
+Under $\mathbb Q$ (with $\widetilde W = W - \int\theta\,ds$), we can write $X_t = \int_0^t\theta_s\,ds + W_t = \widetilde W_t + 2\int_0^t\theta_s\,ds$. Wait — let's redo this cleanly.
+
+Under $\mathbb P$: $W_t$ is BM, so $X_t = \int_0^t\theta_s\,ds + W_t$ has drift $\theta_t$.
+
+Under $\mathbb Q$: $\widetilde W_t = W_t - \int_0^t\theta_s\,ds$ is BM, so $W_t = \widetilde W_t + \int_0^t\theta_s\,ds$, meaning $X_t = \widetilde W_t$: the drift is gone. **Girsanov removes the drift.**
+
+More generally, if $dX_t = b_t\,dt + dW_t$ under $\mathbb P$, then under $\mathbb Q$ (with $\theta_t = -b_t$):
+
+$$
+dX_t = d\widetilde W_t,
+$$
+
+so $X$ becomes pure BM under $\mathbb Q$.
+
+<GeometryBox title="Drift as the geometry of measure change">
+A drift $\theta_t$ tilts the probability measure in path space: paths going upward become relatively more likely under $\mathbb P$ than under the baseline BM. Girsanov's theorem reverses this tilt: $Z_T$ reweights each path by a factor that exactly compensates the drift.
+
+The stochastic exponential $Z_T = e^{\int\theta\,dW - \frac12\int\theta^2\,dt}$ is large for paths that move against the drift (providing extra weight) and small for paths that move with the drift (reducing their weight).
+</GeometryBox>
+
+---
+
+## 6.5 Martingale representation theorem
+
+<TheoremBox title="Martingale representation (Clark–Ocone)">
+Let $(M_t)_{0\le t\le T}$ be any square-integrable $(\mathcal F_t)$-martingale (where $\mathcal F_t = \sigma(W_s: s\le t)$). Then there exists a unique adapted process $H\in\mathcal L^2$ such that
+
+$$
+M_t = M_0 + \int_0^t H_s\,dW_s.
+$$
+</TheoremBox>
+
+This theorem says that every martingale in the Brownian filtration is an Itô integral. There are no other sources of randomness — Brownian motion is the only martingale "atom."
+
+<FinanceBox title="Completeness and perfect hedging">
+  In a model driven by a single Brownian motion, the martingale representation theorem implies that
+  **every contingent claim can be perfectly replicated** by a dynamic trading strategy in the
+  underlying asset. The replication is exactly the stochastic integral $\int H_t\,dS_t$, where $H_t$
+  is the hedge ratio.
+
+  Markets with $d$ independent Brownian motions and $d$ tradable assets are **complete**: every claim
+  is replicable. Incompleteness (stochastic volatility, jumps) introduces additional sources of
+  randomness not spanned by the tradable assets.
+</FinanceBox>
+
+---
+
+## 6.6 Finance: the risk-neutral measure
+
+In the Black–Scholes model:
+
+$$
+dS_t = \mu S_t\,dt + \sigma S_t\,dW_t^{\mathbb P},
+$$
+
+the discounted stock price $\tilde S_t = e^{-rt}S_t$ satisfies
+
+$$
+d\tilde S_t = (\mu-r)\tilde S_t\,dt + \sigma\tilde S_t\,dW_t^{\mathbb P}.
+$$
+
+For $\tilde S_t$ to be a martingale (as required by no-arbitrage), the drift must vanish. Apply Girsanov with $\theta_t = -\frac{\mu-r}{\sigma}$ (the **market price of risk**):
+
+$$
+\widetilde W_t = W_t^{\mathbb P} + \frac{\mu-r}{\sigma}t
+$$
+
+is a $\mathbb Q$-Brownian motion. Under $\mathbb Q$:
+
+$$
+dS_t = r S_t\,dt + \sigma S_t\,d\widetilde W_t.
+$$
+
+The drift equals the risk-free rate: the stock earns $r$ under $\mathbb Q$.
+
+<FinanceBox title="Risk-neutral pricing formula">
+  Under the risk-neutral measure $\mathbb Q$, the price of any replicable claim with payoff $g(S_T)$ is
+
+  $$
+  V_t = e^{-r(T-t)}\mathbb E^{\mathbb Q}[g(S_T)\mid\mathcal F_t].
+  $$
+
+  The measure $\mathbb Q$ is called risk-neutral because under it all assets earn the risk-free rate —
+  investors are indifferent to risk. The real-world drift $\mu$ disappears from the pricing formula.
+  This is why you cannot infer $\mu$ from option prices.
+</FinanceBox>
+
+---
+
+## 6.7 Worked example: pricing a binary call
+
+A **binary call** pays $\$1$ if $S_T > K$, zero otherwise. Under $\mathbb Q$:
+
+$$
+V_0 = e^{-rT}\mathbb Q(S_T > K).
+$$
+
+Under $\mathbb Q$, $S_T = S_0\exp((r-\sigma^2/2)T + \sigma\widetilde W_T)$. Then
+
+$$
+\mathbb Q(S_T > K) = \mathbb Q\!\left(\widetilde W_T > \frac{\log(K/S_0)-(r-\sigma^2/2)T}{\sigma}\right) = N(d_2),
+$$
+
+where $d_2 = \frac{\log(S_0/K)+(r-\sigma^2/2)T}{\sigma\sqrt{T}}$.
+
+Therefore $V_0 = e^{-rT}N(d_2)$. The $N(d_2)$ component of Black–Scholes is exactly the risk-neutral probability that the option expires in the money.
+
+---
+
+## 6.8 Problems
+
+<ProblemBox title="Problem 1: Girsanov density">
+Verify that $\mathbb E^{\mathbb P}[Z_T] = 1$ for $Z_T = e^{\theta W_T - \theta^2 T/2}$ (constant $\theta$). Compute $\mathbb E^{\mathbb P}[Z_T^2]$.
+</ProblemBox>
+
+<ProblemBox title="Problem 2: Measure change for OU">
+Under $\mathbb P$, let $dX = -\kappa X\,dt + dW$ (OU toward zero). Find the measure $\mathbb Q$ under which $X$ is a pure Brownian motion. Write down the Girsanov density $dQ/dP$.
+</ProblemBox>
+
+<ProblemBox title="Problem 3: Risk-neutral GBM">
+Under the risk-neutral measure $\mathbb Q$, verify that $\mathbb E^{\mathbb Q}[S_T] = S_0 e^{rT}$, consistent with risk-free growth.
+</ProblemBox>
+
+<ProblemBox title="Problem 4: Two-sided Girsanov">
+Suppose under $\mathbb P$, $X_t = \theta t + W_t$. Show that under $\mathbb Q$ with $dQ/dP = e^{-\theta W_T - \theta^2 T/2}$, $X_t$ is a $\mathbb Q$-Brownian motion.
+</ProblemBox>
+
+---
+
+## 6.9 Selected solutions
+
+<SolutionBox title="Solution 1">
+$\mathbb E[Z_T] = \mathbb E[e^{\theta W_T - \theta^2 T/2}]$. Since $W_T\sim N(0,T)$:
+
+$$
+\mathbb E[e^{\theta W_T}] = e^{\theta^2 T/2},
+$$
+
+so $\mathbb E[Z_T] = e^{\theta^2 T/2}\cdot e^{-\theta^2 T/2} = 1$. For $\mathbb E[Z_T^2] = \mathbb E[e^{2\theta W_T - \theta^2 T}] = e^{2\theta^2 T}\cdot e^{-\theta^2 T} = e^{\theta^2 T}$.
+</SolutionBox>
+
+<SolutionBox title="Solution 2">
+The OU drift is $b_t = -\kappa X_t$. To remove this drift via Girsanov, set $\theta_t = \kappa X_t$ (the market price of risk equals the negative of the drift). Under $\mathbb Q$ with Radon–Nikodym derivative
+
+$$
+\frac{d\mathbb Q}{d\mathbb P} = \exp\!\left(\kappa\int_0^T X_t\,dW_t - \tfrac12\kappa^2\int_0^T X_t^2\,dt\right),
+$$
+
+the process $\widetilde W_t = W_t - \kappa\int_0^t X_s\,ds$ is a $\mathbb Q$-Brownian motion, and $dX = d\widetilde W$, making $X$ pure BM.
+</SolutionBox>
+
+---
+
+## 6.10 What this chapter gives you
+
+| Concept | Content |
+|---|---|
+| Equivalent measures | same null sets, related by $Z_T > 0$ density |
+| Stochastic exponential | $Z_t = e^{\int\theta\,dW - \frac12\int\theta^2\,dt}$, a martingale |
+| Girsanov's theorem | removes drift: $\widetilde W = W - \int\theta\,ds$ is $\mathbb Q$-BM |
+| Market price of risk | $\theta = (\mu-r)/\sigma$ converts $\mathbb P$ to $\mathbb Q$ |
+| Martingale representation | every BM-martingale is an Itô integral |
+| Risk-neutral pricing | $V_t = e^{-r(T-t)}\mathbb E^{\mathbb Q}[g(S_T)\mid\mathcal F_t]$ |
+
+The next chapter applies all of this to derive Black–Scholes from first principles.

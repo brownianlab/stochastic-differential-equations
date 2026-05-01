@@ -1,0 +1,257 @@
+---
+id: chapter-11-stochastic-vol
+title: Chapter 11 — Local and Stochastic Volatility
+sidebar_label: '11. Stochastic Volatility'
+---
+
+import HestonVolDemo from '@site/src/components/HestonVolDemo';
+import GBMSimulator from '@site/src/components/GBMSimulator';
+import {
+  MotivationBox,
+  GeometryBox,
+  TheoremBox,
+  ProofBox,
+  FinanceBox,
+  ProblemBox,
+  SolutionBox,
+  WarningBox,
+} from '@site/src/components/CourseBoxes';
+
+# Chapter 11 — Local and Stochastic Volatility
+
+<MotivationBox title="Guiding question">
+  Black–Scholes assumes constant volatility. Markets produce an implied volatility surface that
+  varies by both strike and maturity — the "volatility smile." What extensions of GBM reproduce
+  this surface, and what are the trade-offs between local and stochastic volatility models?
+</MotivationBox>
+
+The empirical failure of Black–Scholes is specific: the implied volatility $\sigma_{\rm imp}(K,T)$ extracted from market option prices is not flat. Out-of-the-money puts trade at higher implied vol than at-the-money options (the skew), and implied vol varies with maturity (the term structure). Two classes of models address this:
+
+1. **Local volatility (Dupire):** $\sigma$ depends on $S_t$ and $t$, not on a separate random factor.
+2. **Stochastic volatility (Heston, SABR):** $\sigma_t$ is driven by its own SDE.
+
+---
+
+## 11.1 The implied volatility surface
+
+Given market prices $C_{\rm mkt}(K,T)$ for all strikes $K$ and maturities $T$, the **implied volatility** $\sigma_{\rm imp}(K,T)$ is the unique $\sigma$ in Black–Scholes that matches each price:
+
+$$
+C_{\rm BS}(S_0,K,T,r,\sigma_{\rm imp}(K,T)) = C_{\rm mkt}(K,T).
+$$
+
+The surface $\sigma_{\rm imp}(K,T)$ is the market's consensus view of future realized volatility, embedded in option prices. Key features:
+
+- **Skew:** $\partial_K\sigma_{\rm imp} < 0$ for equities (puts more expensive than calls at same distance from ATM).
+- **Smile:** $\sigma_{\rm imp}$ is U-shaped in $K$ for many asset classes (FX, rates).
+- **Term structure:** $\sigma_{\rm imp}$ changes with $T$.
+
+---
+
+## 11.2 Local volatility: Dupire's formula
+
+Assume the stock follows:
+
+$$
+dS_t = r S_t\,dt + \sigma_{\rm loc}(t,S_t)\,S_t\,dW_t.
+$$
+
+The local volatility function $\sigma_{\rm loc}(t,S)$ is a deterministic function of time and spot. This model is **complete** — every option payoff is replicable.
+
+<TheoremBox title="Dupire's equation">
+Given a complete set of European call prices $C(K,T)$ that are free of arbitrage, the unique local volatility that reproduces them is:
+
+$$
+\sigma_{\rm loc}^2(T,K)
+= \frac{\partial_T C + rK\partial_K C}{\tfrac12 K^2\partial_{KK}C}.
+$$
+</TheoremBox>
+
+<ProofBox title="Derivation from the forward Kolmogorov equation">
+The call price satisfies the Dupire forward PDE (in terms of $K$ and $T$, not $S$ and $t$):
+
+$$
+\partial_T C = \tfrac12\sigma_{\rm loc}^2(T,K)K^2\partial_{KK}C - rK\partial_K C.
+$$
+
+Solving for $\sigma_{\rm loc}^2$ gives the formula above. This is Kolmogorov's forward equation written for the European call as a function of its boundary data $(K,T)$.
+</ProofBox>
+
+<GeometryBox title="Local vol as conditional expectation of realized variance">
+The local variance $\sigma_{\rm loc}^2(t,K)$ equals the expected instantaneous variance of the stock, conditional on $S_t = K$:
+
+$$
+\sigma_{\rm loc}^2(t,K) = \mathbb E[\sigma_t^2\mid S_t = K].
+$$
+
+This holds in any model where $\sigma_t$ is a function of $(t,S_t)$ or is stochastic. Local vol is the "smile-consistent" variance — it is the exact variance needed to match option prices, but says nothing about how variance moves in the future.
+</GeometryBox>
+
+**Limitation of local vol.** Local volatility models fit the current surface exactly, but their dynamics are unrealistic: forward implied vols are "sticky delta" in the wrong direction (empirically, vol tends to rise when $S$ falls more than local vol predicts). They also produce dynamics where the ATM vol smile flattens too fast as $T$ increases.
+
+---
+
+## 11.3 Stochastic volatility: the Heston model
+
+The **Heston model** adds a mean-reverting variance process:
+
+$$
+dS_t = rS_t\,dt + \sqrt{V_t}\,S_t\,dW_t^S,
+$$
+
+$$
+dV_t = \kappa(\theta - V_t)\,dt + \xi\sqrt{V_t}\,dW_t^V,
+$$
+
+$$
+d[W^S, W^V]_t = \rho\,dt.
+$$
+
+Here $V_t$ is the instantaneous variance (so $\sqrt{V_t}$ is the instantaneous volatility), $\theta$ is the long-run variance, $\kappa$ is the mean-reversion speed, $\xi$ is the vol-of-vol, and $\rho$ is the correlation.
+
+<HestonVolDemo />
+
+**Feller condition:** $2\kappa\theta > \xi^2$ ensures $V_t > 0$ a.s. (Chapter 5).
+
+**Risk-neutral measure.** The Heston model has one stock and two Brownian motions. The market is incomplete: there is a one-parameter family of risk-neutral measures indexed by the market price of variance risk $\lambda$. Typically one sets $\lambda = 0$ (zero variance risk premium) or calibrates $\lambda$ from the term structure of implied vol.
+
+---
+
+## 11.4 The Heston characteristic function
+
+The key tractability of the Heston model: the log-stock has an affine conditional characteristic function. Define $\phi(u;t,T,S,V) = \mathbb E^{\mathbb Q}[e^{iu\log S_T}\mid S_t,V_t]$. By affine theory:
+
+$$
+\phi(u) = \exp\!\bigl(C(u,\tau) + D(u,\tau)V_t + iu\log S_t\bigr),
+$$
+
+where $\tau = T-t$ and $(C,D)$ solve a system of Riccati ODEs.
+
+<TheoremBox title="Heston call price via Fourier inversion">
+The European call price is:
+
+$$
+C = S_0 P_1 - Ke^{-rT}P_2,
+$$
+
+where
+
+$$
+P_j = \frac12 + \frac{1}{\pi}\int_0^\infty\text{Re}\!\left[\frac{e^{-iu\log K}\phi_j(u)}{iu}\right]du
+$$
+
+and $\phi_j$ are related to $\phi$ by a measure-change. This is a one-dimensional numerical integral — fast to evaluate.
+</TheoremBox>
+
+---
+
+## 11.5 The implied volatility smile from Heston
+
+The Heston model produces a characteristic smile:
+
+| Parameter | Effect on smile |
+|---|---|
+| $\rho < 0$ | Left skew (equity-like): high vol when $S$ falls |
+| $\rho > 0$ | Right skew (FX-like): high vol when $S$ rises |
+| $\xi$ large | Wider smile (more curvature) |
+| $\kappa$ large | Flatter long-term smile (fast mean-reversion) |
+| $\theta$ large | Higher overall vol level |
+
+<FinanceBox title="Leverage effect and ρ < 0">
+  Empirically, equity implied vol rises sharply when the market falls. This "leverage effect" means
+  $\rho < 0$: negative correlation between price moves and volatility moves. In the Heston model,
+  $\rho$ is the correlation between $dW^S$ and $dW^V$. A fall in $S$ (driven by $dW^S < 0$)
+  coincides with a rise in $V$ (driven by $dW^V > 0$ when $\rho < 0$), reproducing the observed
+  negative equity skew.
+</FinanceBox>
+
+---
+
+## 11.6 SABR model
+
+The SABR (Stochastic Alpha Beta Rho) model is widely used in interest rates:
+
+$$
+dF_t = \alpha_t F_t^\beta\,dW_t,
+\qquad
+d\alpha_t = \nu\alpha_t\,d\hat W_t,
+\qquad
+d[W,\hat W] = \rho\,dt.
+$$
+
+For $\beta = 1$: SABR with lognormal backbone. For $\beta = 0$: normal SABR.
+
+The Hagan–Kumar–Lesniewski–Woodward (HKLW) approximation gives an explicit formula for implied vol in terms of $(F, K, T, \alpha, \beta, \nu, \rho)$:
+
+$$
+\sigma_{\rm imp}(K) \approx \frac{\alpha}{\cdots}\left[1 + \cdots\right].
+$$
+
+The formula is used to interpolate the vol surface from calibrated SABR parameters.
+
+---
+
+## 11.7 Local stochastic volatility (LSV)
+
+A practical compromise between local vol (exact fit) and stochastic vol (realistic dynamics):
+
+$$
+dS_t = rS_t\,dt + \sigma_{\rm loc}(t,S_t)\sqrt{V_t}\,S_t\,dW_t^S.
+$$
+
+The function $\sigma_{\rm loc}$ is chosen so the model exactly reproduces the market surface, while $V_t$ provides stochastic dynamics. The calibration condition is:
+
+$$
+\sigma_{\rm loc}^2(t,K) = \frac{\sigma_{\rm Dupire}^2(t,K)}{\mathbb E[\sqrt{V_t}\mid S_t = K]}.
+$$
+
+This requires a Fokker–Planck PDE for the joint density of $(S_t,V_t)$.
+
+---
+
+## 11.8 Problems
+
+<ProblemBox title="Problem 1: Dupire in BS">
+Show that for constant $\sigma$ (Black–Scholes), Dupire's formula gives $\sigma_{\rm loc}^2(T,K) = \sigma^2$. (Hint: use the BS call formula and compute the derivatives.)
+</ProblemBox>
+
+<ProblemBox title="Problem 2: Heston and the Feller condition">
+For Heston with $\kappa=1$, $\theta=0.04$, $\xi=0.3$: check the Feller condition $2\kappa\theta > \xi^2$. What happens numerically when you violate it?
+</ProblemBox>
+
+<ProblemBox title="Problem 3: Smile curvature">
+In the Heston model, the at-the-money implied vol is approximately $\sqrt{\theta}$. The smile curvature (second derivative with respect to $K$ at ATM) is driven by $\xi$. Show informally why larger $\xi$ creates a wider smile.
+</ProblemBox>
+
+---
+
+## 11.9 Selected solutions
+
+<SolutionBox title="Solution 1">
+For Black–Scholes, $C(K,T) = S_0 N(d_1) - Ke^{-rT}N(d_2)$ with constant $\sigma$. Compute:
+
+$\partial_T C = $ (Theta in terms of $\tau$) $= S_0 N'(d_1)\sigma/(2\sqrt{T}) - rKe^{-rT}N(d_2)$.
+
+$\partial_K C = -e^{-rT}N(d_2)$.
+
+$\partial_{KK} C = e^{-rT}N'(d_2)/(K\sigma\sqrt{T})$.
+
+After substitution into Dupire's formula $\sigma_{\rm loc}^2 = (\partial_T C + rK\partial_K C)/(\frac12 K^2\partial_{KK}C)$, one can verify algebraically that $\sigma_{\rm loc}^2 = \sigma^2$. The key identity is $S_0 N'(d_1) = Ke^{-rT}N'(d_2)$.
+</SolutionBox>
+
+<SolutionBox title="Solution 2">
+Feller condition: $2\times 1\times 0.04 = 0.08 > 0.09 = 0.3^2$. The condition is NOT satisfied. When violated, $V_t$ touches zero and the simulation may become unstable or require reflection/truncation.
+</SolutionBox>
+
+---
+
+## 11.10 What this chapter gives you
+
+| Model | Key property | Tractability |
+|---|---|---|
+| Local vol (Dupire) | Exact fit, deterministic $\sigma(t,S)$ | Dupire PDE, closed-form $\sigma_{\rm loc}$ |
+| Heston | Stochastic $V_t$, affine structure | Fourier inversion, semi-closed form |
+| SABR | Free-lognormal stochastic vol | HKLW explicit approximation |
+| LSV | Exact fit + stochastic dynamics | Fokker–Planck calibration |
+
+The next chapter applies these tools to the interest rate market, where the "underlying" is the entire yield curve.

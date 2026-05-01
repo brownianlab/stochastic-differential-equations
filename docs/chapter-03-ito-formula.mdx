@@ -1,0 +1,443 @@
+---
+id: chapter-03-ito-formula
+title: Chapter 3 — Itô's Formula
+sidebar_label: "3. Itô's Formula"
+---
+
+import ItoFormulaDemo from '@site/src/components/ItoFormulaDemo';
+import GBMSimulator from '@site/src/components/GBMSimulator';
+import {
+  MotivationBox,
+  GeometryBox,
+  TheoremBox,
+  ProofBox,
+  FinanceBox,
+  ProblemBox,
+  SolutionBox,
+  WarningBox,
+} from '@site/src/components/CourseBoxes';
+
+# Chapter 3 — Itô's Formula
+
+<MotivationBox title="Guiding question">
+  If $f$ is a smooth function and $W_t$ is Brownian motion, how does $f(W_t)$ change over time? The
+  ordinary chain rule says $d(f\circ W) = f'\,dW$. Why is this wrong, and what replaces it?
+</MotivationBox>
+
+Itô's formula is the chain rule of stochastic calculus. It is the single most important computational tool in the entire theory. Every SDE that can be solved explicitly is solved via Itô's formula. Every partial differential equation that arises in option pricing is derived via Itô's formula.
+
+The reason the ordinary chain rule fails is the quadratic variation of Brownian motion: $(dW_t)^2 = dt$. This creates an additional drift term proportional to the second derivative $f''$.
+
+---
+
+## 3.1 Why the ordinary chain rule fails
+
+For a deterministic differentiable function $g:[0,T]\to\mathbb R$ and a smooth function $f:\mathbb R\to\mathbb R$, the chain rule gives
+
+$$
+f(g(T)) - f(g(0)) = \int_0^T f'(g(t))\,g'(t)\,dt.
+$$
+
+In infinitesimal notation: $d(f\circ g) = f'(g)\,dg$. The second derivative plays no role because $(dg)^2\sim (g'(t))^2(dt)^2 = O(dt^2)$ is negligible.
+
+For stochastic processes, increments of order $\sqrt{dt}$ change everything. Write the second-order Taylor expansion:
+
+$$
+f(W_{t+h}) - f(W_t)
+= f'(W_t)(W_{t+h}-W_t)
++ \tfrac12 f''(W_t)(W_{t+h}-W_t)^2
++ O(|W_{t+h}-W_t|^3).
+$$
+
+Summing over a partition:
+
+$$
+f(W_T)-f(W_0)
+\approx \sum_k f'(W_{t_k})\Delta W_k
++ \tfrac12\sum_k f''(W_{t_k})(\Delta W_k)^2.
+$$
+
+As the partition refines, the first sum converges to the Itô integral $\int_0^T f'(W_t)\,dW_t$. The second sum involves $(\Delta W_k)^2\approx\Delta t_k$, so it converges to $\frac12\int_0^T f''(W_t)\,dt$.
+
+The third-order remainder is negligible because $(\Delta W_k)^3 \sim (\Delta t_k)^{3/2}$ and $\sum(\Delta t_k)^{3/2} \le |\Pi|^{1/2}\cdot T\to 0$.
+
+<GeometryBox title="Why the second derivative survives">
+In classical calculus, the chain rule is first-order: only $f'$ appears because $(dg)^2 = O(dt^2)\to 0$.
+
+For Brownian motion, $(dW)^2 = O(dt)$, which is the same order as $dt$ itself. So the second derivative is not negligible: it contributes a term of order $dt$, exactly the same magnitude as the drift.
+
+This is the geometric content of Itô's formula: Brownian paths are so rough that second derivatives must be included in the linearization.
+</GeometryBox>
+
+---
+
+## 3.2 Itô's formula: one-dimensional, time-independent
+
+<TheoremBox title="Itô's formula (basic version)">
+Let $f:\mathbb R\to\mathbb R$ be twice continuously differentiable. Then
+
+$$
+f(W_T) - f(W_0)
+= \int_0^T f'(W_t)\,dW_t
++ \frac12\int_0^T f''(W_t)\,dt.
+$$
+
+In differential notation:
+
+$$
+df(W_t) = f'(W_t)\,dW_t + \tfrac12 f''(W_t)\,dt.
+$$
+</TheoremBox>
+
+<ProofBox title="Proof via partition and Taylor expansion">
+Let $\Pi = \{0=t_0<t_1<\cdots<t_n=T\}$. By the Taylor expansion to second order:
+
+$$
+f(W_{t_{k+1}})-f(W_{t_k})
+= f'(W_{t_k})\Delta W_k
++ \tfrac12 f''(W_{t_k})(\Delta W_k)^2
++ R_k,
+$$
+
+where $R_k = \frac12[f''(\xi_k)-f''(W_{t_k})](\Delta W_k)^2$ for some $\xi_k$ between $W_{t_k}$ and $W_{t_{k+1}}$.
+
+**Step 1.** Summing and telescoping:
+
+$$
+f(W_T)-f(W_0)
+= \sum_k f'(W_{t_k})\Delta W_k
++ \tfrac12\sum_k f''(W_{t_k})(\Delta W_k)^2
++ \sum_k R_k.
+$$
+
+**Step 2.** The first sum converges in $L^2$ to $\int_0^T f'(W_t)\,dW_t$ by definition of the Itô integral.
+
+**Step 3.** For the second sum, write:
+
+$$
+\sum_k f''(W_{t_k})(\Delta W_k)^2
+= \sum_k f''(W_{t_k})\Delta t_k
++ \sum_k f''(W_{t_k})[(\Delta W_k)^2-\Delta t_k].
+$$
+
+The first part converges to $\int_0^T f''(W_t)\,dt$. For the second part, its $L^2$ norm vanishes as $|\Pi|\to 0$ (the increments $(\Delta W_k)^2-\Delta t_k$ are centered and orthogonal, so their sum's variance is $2\sum_k(\Delta t_k)^2\le 2|\Pi|\cdot T\to 0$).
+
+**Step 4.** The remainder terms $\sum_k R_k\to 0$ in $L^2$ by continuity of $f''$ and the fact that $\sum_k(\Delta W_k)^2\to T$.
+
+Combining, the result holds in $L^2$.
+</ProofBox>
+
+<ItoFormulaDemo />
+
+---
+
+## 3.3 The symbolic rule $(dW_t)^2 = dt$
+
+Itô's formula is efficiently remembered via the multiplication table:
+
+| $\times$ | $dW_t$ | $dt$ |
+|---|---|---|
+| $dW_t$ | $dt$ | $0$ |
+| $dt$ | $0$ | $0$ |
+
+This says: $(dW_t)^2 = dt$, $dW_t\cdot dt = 0$, $(dt)^2 = 0$. The table encodes the order-of-magnitude argument:
+
+$$
+dW_t\sim\sqrt{dt},\quad
+(dW_t)^2\sim dt,\quad
+dW_t\cdot dt\sim dt^{3/2}\to 0,\quad
+(dt)^2\sim dt^2\to 0.
+$$
+
+Using this table, the chain rule $df = f'dW + \frac12 f''(dW)^2 = f'dW + \frac12 f''dt$ follows immediately from the formal second-order Taylor expansion.
+
+---
+
+## 3.4 General Itô process
+
+The formula extends to any Itô process, not just Brownian motion.
+
+<TheoremBox title="Itô's formula for Itô processes">
+Let $X_t$ satisfy
+
+$$
+dX_t = b_t\,dt + \sigma_t\,dW_t,
+$$
+
+where $b$ and $\sigma$ are adapted and satisfy integrability conditions. Let $f:\mathbb R\to\mathbb R$ be $C^2$. Then
+
+$$
+df(X_t) = f'(X_t)\,dX_t + \tfrac12 f''(X_t)\,d[X]_t,
+$$
+
+where $d[X]_t = \sigma_t^2\,dt$. Expanding:
+
+$$
+df(X_t)
+= f'(X_t)b_t\,dt
++ f'(X_t)\sigma_t\,dW_t
++ \tfrac12 f''(X_t)\sigma_t^2\,dt.
+$$
+</TheoremBox>
+
+The proof follows the same structure, using $(dX_t)^2 = \sigma_t^2\,dt$ from the Itô multiplication table.
+
+---
+
+## 3.5 Time-dependent Itô formula
+
+<TheoremBox title="Itô's formula with time dependence">
+Let $f = f(t,x)$ be $C^{1,2}$ (once in $t$, twice in $x$). Then
+
+$$
+df(t,X_t)
+= \partial_t f\,dt
++ \partial_x f\,dX_t
++ \tfrac12\partial_{xx}f\,(dX_t)^2,
+$$
+
+which expands to
+
+$$
+df(t,X_t)
+= \left[\partial_t f + b_t\,\partial_x f + \tfrac12\sigma_t^2\,\partial_{xx}f\right]dt
++ \sigma_t\,\partial_x f\,dW_t.
+$$
+</TheoremBox>
+
+<GeometryBox title="Three sources of change">
+The function $f(t,X_t)$ changes due to three effects:
+
+1. **Time drift** $\partial_t f\,dt$: direct time-dependence of $f$.
+2. **First-order $X$ term** $\partial_x f\cdot dX_t$: classical chain rule contribution.
+3. **Curvature correction** $\frac12\partial_{xx}f\cdot\sigma^2\,dt$: Brownian quadratic variation creates an extra drift proportional to the second derivative. This is the purely stochastic term.
+
+In the language of differential geometry, the second term is the gradient dotted with the velocity, and the third term is a Laplacian-like correction from the rough geometry of Brownian paths.
+</GeometryBox>
+
+---
+
+## 3.6 Key examples
+
+### Example 1: $d(W_t^2)$
+
+Take $f(x) = x^2$, so $f' = 2x$, $f'' = 2$:
+
+$$
+d(W_t^2) = 2W_t\,dW_t + \tfrac12\cdot 2\,dt = 2W_t\,dW_t + dt.
+$$
+
+Integrating:
+
+$$
+W_T^2 = 2\int_0^T W_t\,dW_t + T.
+$$
+
+This recovers the computation of Section 2.10 from a different angle.
+
+### Example 2: $d(e^{W_t})$
+
+Take $f(x) = e^x$, so $f'=f''=e^x$:
+
+$$
+d(e^{W_t}) = e^{W_t}\,dW_t + \tfrac12 e^{W_t}\,dt.
+$$
+
+Taking expectations: $\frac{d}{dt}\mathbb E[e^{W_t}] = \tfrac12\mathbb E[e^{W_t}]$, which gives $\mathbb E[e^{W_t}] = e^{t/2}$. This is the standard moment generating function of $N(0,t)$.
+
+### Example 3: $d(e^{\theta W_t - \theta^2 t/2})$ — the exponential martingale
+
+Take $f(t,x) = e^{\theta x - \theta^2 t/2}$. Then
+
+$$
+\partial_t f = -\tfrac12\theta^2 f,\quad
+\partial_x f = \theta f,\quad
+\partial_{xx}f = \theta^2 f.
+$$
+
+Itô's formula gives
+
+$$
+df = \left(-\tfrac12\theta^2 f + \tfrac12\theta^2 f\right)dt + \theta f\,dW_t = \theta f\,dW_t.
+$$
+
+Since the drift vanishes, $\mathcal E_t(\theta) = e^{\theta W_t - \theta^2 t/2}$ is a local martingale (and under integrability conditions, a true martingale). This is the **Doléans-Dade exponential** or **stochastic exponential**, central to Girsanov's theorem.
+
+---
+
+## 3.7 Geometric Brownian Motion
+
+The most important SDE in finance is:
+
+$$
+dS_t = \mu S_t\,dt + \sigma S_t\,dW_t,
+\quad S_0 > 0.
+$$
+
+**Strategy:** apply Itô's formula to $\log S_t$.
+
+Let $f(x) = \log x$ (for $x > 0$). Then $f'(x) = 1/x$, $f''(x) = -1/x^2$. Itô's formula gives:
+
+$$
+d(\log S_t)
+= \frac{1}{S_t}\,dS_t + \tfrac12\left(-\frac{1}{S_t^2}\right)(dS_t)^2.
+$$
+
+Now $(dS_t)^2 = \sigma^2 S_t^2\,dt$, so:
+
+$$
+d(\log S_t)
+= \frac{\mu S_t\,dt + \sigma S_t\,dW_t}{S_t} - \tfrac12\sigma^2\,dt
+= \left(\mu - \tfrac12\sigma^2\right)dt + \sigma\,dW_t.
+$$
+
+The right side is a Brownian motion with constant coefficients. Integrating:
+
+$$
+\log S_t = \log S_0 + \left(\mu - \tfrac12\sigma^2\right)t + \sigma W_t,
+$$
+
+so
+
+$$
+\boxed{S_t = S_0\exp\!\left[\left(\mu - \tfrac12\sigma^2\right)t + \sigma W_t\right].}
+$$
+
+<GBMSimulator />
+
+<FinanceBox title="Log-normal returns and the volatility drag">
+  The expected value is $\mathbb E[S_t] = S_0 e^{\mu t}$ (the drift $\mu$ drives the mean). But the
+  **median** of $S_t$ is $S_0 e^{(\mu-\sigma^2/2)t}$, which is smaller. The term $-\sigma^2/2$ is the
+  **volatility drag** or **Itô correction**: randomness moves the median below the mean due to Jensen's
+  inequality applied to the convex exponential function. Higher volatility means slower median growth,
+  even with the same expected return.
+</FinanceBox>
+
+---
+
+## 3.8 Multidimensional Itô formula
+
+Let $\mathbf X_t = (X_t^1,\ldots,X_t^d)$ with $dX_t^i = b_t^i\,dt + \sigma_t^{ij}\,dW_t^j$ (summed over $j$). For $f\in C^{1,2}$,
+
+$$
+df(t,\mathbf X_t)
+= \partial_t f\,dt
++ \sum_i \partial_i f\,dX_t^i
++ \tfrac12\sum_{i,j}\partial_{ij}f\,d[X^i,X^j]_t.
+$$
+
+where $d[X^i,X^j]_t = \sum_k\sigma_t^{ik}\sigma_t^{jk}\,dt$. The details are in Chapter 8.
+
+---
+
+## 3.9 Itô's product rule
+
+As a special case, for two Itô processes $X_t$ and $Y_t$:
+
+$$
+d(X_t Y_t) = X_t\,dY_t + Y_t\,dX_t + d[X,Y]_t.
+$$
+
+The last term is the stochastic correction. Compare with the deterministic product rule (Leibniz rule), which has no such correction.
+
+<ProofBox title="Derivation from the bilinear identity">
+Apply Itô's formula to $f(x,y)=xy$: then $\partial_{xy}f = 1$, all other second derivatives vanish. The formula gives $d(XY) = X\,dY + Y\,dX + d[X,Y]$.
+</ProofBox>
+
+---
+
+## 3.10 Problems
+
+<ProblemBox title="Problem 1: d(W_t^3)">
+Use Itô's formula to compute $d(W_t^3)$ and integrate to find $\int_0^T W_t^2\,dW_t$ in terms of $W_T$ and $T$.
+</ProblemBox>
+
+<ProblemBox title="Problem 2: Exponential process">
+Let $X_t = e^{at + bW_t}$ for constants $a,b$. Find the SDE satisfied by $X$.
+</ProblemBox>
+
+<ProblemBox title="Problem 3: Itô's formula for $f(t,x) = x^2 - t$">
+Show directly that $f(t,W_t) = W_t^2 - t$ is a local martingale. What is its SDE?
+</ProblemBox>
+
+<ProblemBox title="Problem 4: Integration by parts">
+Use the Itô product rule to show that
+
+$$
+W_T^2 = 2\int_0^T W_t\,dW_t + T.
+$$
+</ProblemBox>
+
+<ProblemBox title="Problem 5: Lognormal moments">
+For GBM with $S_t = S_0\exp((\mu-\sigma^2/2)t + \sigma W_t)$, compute $\mathbb E[S_t^n]$ for integer $n\ge 1$.
+</ProblemBox>
+
+---
+
+## 3.11 Selected solutions
+
+<SolutionBox title="Solution 1">
+With $f(x) = x^3$, $f'=3x^2$, $f''=6x$:
+
+$$
+d(W_t^3) = 3W_t^2\,dW_t + \tfrac12\cdot 6W_t\,dt = 3W_t^2\,dW_t + 3W_t\,dt.
+$$
+
+Integrating: $W_T^3 = 3\int_0^T W_t^2\,dW_t + 3\int_0^T W_t\,dt$, so
+
+$$
+\int_0^T W_t^2\,dW_t = \tfrac13 W_T^3 - \int_0^T W_t\,dt.
+$$
+
+The remaining integral $\int_0^T W_t\,dt$ is a Gaussian with mean $0$ and variance $T^3/3$.
+</SolutionBox>
+
+<SolutionBox title="Solution 2">
+Let $f(t,x) = e^{at+bx}$. Then $\partial_t f = af$, $\partial_x f = bf$, $\partial_{xx}f = b^2f$. Itô's formula:
+
+$$
+dX_t = af\,dt + bf\,dW_t + \tfrac12 b^2 f\,dt = (a+\tfrac12 b^2)X_t\,dt + bX_t\,dW_t.
+$$
+</SolutionBox>
+
+<SolutionBox title="Solution 3">
+With $f(t,x)=x^2-t$: $\partial_t f = -1$, $\partial_x f=2x$, $\partial_{xx}f=2$. Itô:
+
+$$
+d(W_t^2-t) = (-1+\tfrac12\cdot 2)\,dt + 2W_t\,dW_t = 2W_t\,dW_t.
+$$
+
+The drift vanishes: $W_t^2-t$ is a local martingale with zero mean.
+</SolutionBox>
+
+<SolutionBox title="Solution 5">
+Since $S_t^n = S_0^n\exp(n(\mu-\sigma^2/2)t + n\sigma W_t)$, and $e^{n\sigma W_t}$ has moment generating function $e^{n^2\sigma^2 t/2}$:
+
+$$
+\mathbb E[S_t^n] = S_0^n\exp\!\left[\left(n\mu - \tfrac{n}{2}\sigma^2 + \tfrac{n^2}{2}\sigma^2\right)t\right]
+= S_0^n\exp\!\left[\left(n\mu + \tfrac{n(n-1)}{2}\sigma^2\right)t\right].
+$$
+
+For $n=1$: $\mathbb E[S_t] = S_0 e^{\mu t}$. For $n=2$: $\mathbb E[S_t^2] = S_0^2 e^{(2\mu+\sigma^2)t}$.
+</SolutionBox>
+
+---
+
+## 3.12 What this chapter gives you
+
+Itô's formula is the engine of stochastic calculus:
+
+$$
+df(t,X_t)
+= \underbrace{\partial_t f\,dt}_{\text{time}}
++ \underbrace{\partial_x f\,dX_t}_{\text{first order}}
++ \underbrace{\tfrac12\partial_{xx}f\,d[X]_t}_{\text{Itô correction}}.
+$$
+
+The third term is unique to stochastic calculus and arises from $(dW)^2 = dt$. It:
+
+- creates the volatility drag in GBM;
+- is the source of the $\frac12\sigma^2$ term in the Black–Scholes PDE;
+- is what makes stochastic calculus fundamentally different from classical calculus.
+
+The next chapter uses Itô's formula as the main tool for stating and solving stochastic differential equations.

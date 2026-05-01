@@ -1,0 +1,509 @@
+---
+id: chapter-02-ito-integral
+title: Chapter 2 — Construction of the Itô Integral
+sidebar_label: '2. The Itô Integral'
+---
+
+import ItoIntegralDemo from '@site/src/components/ItoIntegralDemo';
+import {
+  MotivationBox,
+  GeometryBox,
+  TheoremBox,
+  ProofBox,
+  FinanceBox,
+  ProblemBox,
+  SolutionBox,
+  WarningBox,
+} from '@site/src/components/CourseBoxes';
+
+# Chapter 2 — Construction of the Itô Integral
+
+<MotivationBox title="Guiding question">
+  Brownian motion is nowhere differentiable. Its total variation is almost surely infinite. Classical
+  Riemann–Stieltjes integration requires the integrator to have bounded variation. How, then, can we
+  define $\int_0^T H_t\,dW_t$ in a way that is mathematically precise and financially meaningful?
+</MotivationBox>
+
+The Itô integral is the central technical object of stochastic calculus. Chapter 1 built Brownian motion and established its quadratic variation property $[W]_T = T$. This chapter uses that property as a foundation. The strategy is:
+
+1. Observe that pathwise Riemann–Stieltjes integration fails.
+2. Define the integral for a small, explicitly computable class (simple processes).
+3. Prove an isometry that makes the integral a bounded linear map in $L^2$.
+4. Extend to the full $L^2$ class by density and closure.
+
+The construction mirrors the standard $L^2$ completion in functional analysis, and the isometry is its counterpart of Parseval's theorem.
+
+---
+
+## 2.1 Why pathwise integration fails
+
+Let $f:[0,T]\to\mathbb R$ be a continuous function and $g:[0,T]\to\mathbb R$ be the integrator. The Riemann–Stieltjes integral $\int_0^T f\,dg$ exists whenever $f$ is continuous and $g$ has **bounded variation**:
+
+$$
+\|g\|_{\mathrm{TV}} = \sup_\Pi \sum_{k}|g(t_{k+1})-g(t_k)| < \infty.
+$$
+
+For Brownian motion, the opposite holds.
+
+<TheoremBox title="Brownian motion has infinite total variation">
+Almost surely,
+
+$$
+\sum_{k=0}^{n-1}|W_{t_{k+1}}-W_{t_k}|\to\infty
+$$
+
+as the mesh $|\Pi|\to 0$.
+</TheoremBox>
+
+<ProofBox title="Proof">
+On a uniform partition with $t_k = kT/n$, the increments are i.i.d.\ $N(0,T/n)$.
+Therefore
+
+$$
+\mathbb E\left[\sum_{k=0}^{n-1}|W_{t_{k+1}}-W_{t_k}|\right]
+= n\cdot \mathbb E\left[|N(0,T/n)|\right]
+= n\cdot \sqrt{\frac{2T}{\pi n}}
+= \sqrt{\frac{2nT}{\pi}}
+\to\infty.
+$$
+
+By the law of large numbers applied to the i.i.d.\ terms $|W_{t_{k+1}}-W_{t_k}|$, the sum converges almost surely to $\infty$.
+</ProofBox>
+
+So Brownian paths are nowhere near having bounded variation. No classical integral theory applies directly.
+
+<GeometryBox title="Why infinite variation but finite quadratic variation?">
+Total variation sums $|\Delta W|$. Quadratic variation sums $(\Delta W)^2$. Because $\Delta W \sim \sqrt{\Delta t}$, we have
+
+$$
+|\Delta W| \sim \sqrt{\Delta t},
+\quad
+(\Delta W)^2 \sim \Delta t.
+$$
+
+Summing over $n = T/\Delta t$ terms:
+
+$$
+\sum |\Delta W| \sim n\sqrt{\Delta t} = \sqrt{T/\Delta t}\to\infty,
+\quad
+\sum (\Delta W)^2 \sim n\cdot\Delta t = T.
+$$
+
+Quadratic variation lives in the right scaling window to remain finite. This is why $(dW)^2 = dt$ is the key equation, and why the natural Hilbert space for stochastic integration is built on the $L^2$ norm.
+</GeometryBox>
+
+---
+
+## 2.2 The class of simple adapted processes
+
+A process $H = (H_t)_{0\le t\le T}$ is called **simple** (or elementary) if there exists a partition $0 = t_0 < t_1 < \cdots < t_n = T$ and $\mathcal F_{t_k}$-measurable random variables $H_k$ satisfying $\mathbb E[H_k^2]<\infty$, such that
+
+$$
+H_t = \sum_{k=0}^{n-1} H_k\,\mathbf{1}_{(t_k,t_{k+1}]}(t).
+$$
+
+The requirement that $H_k$ is $\mathcal F_{t_k}$-measurable is the **adaptedness** condition: the value of the integrand at time $t_k$ may only use information up to $t_k$.
+
+<WarningBox title="Adaptedness is not optional">
+If $H_k$ were allowed to depend on $W_{t_{k+1}}$ — the future increment — the resulting integral would not be a martingale, and the isometry below would fail. In finance, this corresponds to using future prices to choose a present position: pure look-ahead bias.
+</WarningBox>
+
+For a simple process, we define the Itô integral as the finite sum
+
+$$
+I(H) = \int_0^T H_t\,dW_t
+:= \sum_{k=0}^{n-1} H_k\bigl(W_{t_{k+1}}-W_{t_k}\bigr).
+$$
+
+Each term is a product of a $\mathcal F_{t_k}$-measurable random variable with an independent increment. This is a finite sum of square-integrable random variables, so $I(H)\in L^2(\Omega)$.
+
+---
+
+## 2.3 The Itô isometry for simple processes
+
+<TheoremBox title="Itô isometry">
+For any simple adapted process $H$,
+
+$$
+\mathbb E\!\left[\!\left(\int_0^T H_t\,dW_t\right)^{\!2}\right]
+= \mathbb E\!\left[\int_0^T H_t^2\,dt\right].
+$$
+</TheoremBox>
+
+<ProofBox title="Proof">
+Write $\Delta W_k = W_{t_{k+1}}-W_{t_k}$ and $\Delta t_k = t_{k+1}-t_k$. Then
+
+$$
+\left(\sum_{k=0}^{n-1} H_k\,\Delta W_k\right)^{\!2}
+= \sum_{k=0}^{n-1} H_k^2\,(\Delta W_k)^2
++ 2\sum_{j<k} H_j\,\Delta W_j\,H_k\,\Delta W_k.
+$$
+
+**Cross terms.** For $j < k$, the product $H_j\,\Delta W_j\,H_k$ is $\mathcal F_{t_k}$-measurable, and $\Delta W_k$ is independent of $\mathcal F_{t_k}$ with mean zero. Therefore
+
+$$
+\mathbb E[H_j\,\Delta W_j\,H_k\,\Delta W_k]
+= \mathbb E[H_j\,\Delta W_j\,H_k]\cdot\mathbb E[\Delta W_k]
+= 0.
+$$
+
+**Diagonal terms.** For each $k$, $H_k$ is $\mathcal F_{t_k}$-measurable and independent of $\Delta W_k$. Therefore
+
+$$
+\mathbb E[H_k^2\,(\Delta W_k)^2]
+= \mathbb E[H_k^2]\cdot\mathbb E[(\Delta W_k)^2]
+= \mathbb E[H_k^2]\cdot\Delta t_k.
+$$
+
+Summing,
+
+$$
+\mathbb E\!\left[\left(\int_0^T H_t\,dW_t\right)^{\!2}\right]
+= \sum_{k=0}^{n-1}\mathbb E[H_k^2]\,\Delta t_k
+= \mathbb E\!\left[\int_0^T H_t^2\,dt\right].
+$$
+</ProofBox>
+
+The cross terms vanish because of adaptedness. This is the structural insight: the left endpoint rule is exactly what kills the cross terms.
+
+<GeometryBox title="Isometry: the integral is an isometric embedding">
+The map $H\mapsto I(H)$ sends the Hilbert space
+
+$$
+L^2([0,T]\times\Omega, dt\otimes\mathbb P)
+$$
+
+isometrically into $L^2(\Omega,\mathbb P)$. Distances are preserved:
+
+$$
+\|I(H)\|_{L^2(\Omega)} = \|H\|_{L^2([0,T]\times\Omega)}.
+$$
+
+This is the stochastic counterpart of the identity $\|\hat f\|_2 = \|f\|_2$ in Fourier analysis: an integral transform that preserves $L^2$ norms.
+</GeometryBox>
+
+---
+
+## 2.4 Zero mean
+
+<TheoremBox title="Itô integral is centered">
+For any simple adapted $H$,
+
+$$
+\mathbb E\!\left[\int_0^T H_t\,dW_t\right] = 0.
+$$
+</TheoremBox>
+
+<ProofBox title="Proof">
+Each term: $\mathbb E[H_k\,\Delta W_k] = \mathbb E[H_k]\cdot\mathbb E[\Delta W_k] = 0$, since $H_k$ is independent of $\Delta W_k$ and $\mathbb E[\Delta W_k]=0$.
+</ProofBox>
+
+---
+
+## 2.5 Extension to $L^2$ adapted processes
+
+Let $\mathcal L^2 = L^2_{\mathrm{ad}}([0,T]\times\Omega)$ denote the space of adapted processes $H$ with
+
+$$
+\|H\|^2 = \mathbb E\!\left[\int_0^T H_t^2\,dt\right] < \infty.
+$$
+
+<TheoremBox title="Density of simple processes">
+The simple adapted processes are dense in $\mathcal L^2$: for any $H\in\mathcal L^2$, there exists a sequence of simple processes $H^{(n)}$ with
+
+$$
+\|H^{(n)}-H\|_{\mathcal L^2}\to 0.
+$$
+</TheoremBox>
+
+Given this density, define the Itô integral for general $H\in\mathcal L^2$ as the $L^2(\Omega)$-limit:
+
+$$
+\int_0^T H_t\,dW_t = \lim_{n\to\infty}\int_0^T H_t^{(n)}\,dW_t,
+$$
+
+where the limit is in $L^2(\Omega)$.
+
+<ProofBox title="Well-definedness">
+The sequence $I(H^{(n)})$ is Cauchy in $L^2(\Omega)$ because, by the isometry,
+
+$$
+\|I(H^{(m)})-I(H^{(n)})\|_{L^2(\Omega)}
+= \|I(H^{(m)}-H^{(n)})\|_{L^2(\Omega)}
+= \|H^{(m)}-H^{(n)}\|_{\mathcal L^2}\to 0.
+$$
+
+Since $L^2(\Omega)$ is complete, the limit exists and is independent of the approximating sequence.
+</ProofBox>
+
+<ItoIntegralDemo />
+
+---
+
+## 2.6 The Itô integral as a martingale
+
+Define the running integral
+
+$$
+M_t = \int_0^t H_s\,dW_s,
+\qquad 0\le t\le T.
+$$
+
+<TheoremBox title="Martingale property">
+The process $(M_t)_{0\le t\le T}$ is a martingale with respect to the filtration $(\mathcal F_t)$.
+</TheoremBox>
+
+<ProofBox title="Proof sketch for simple processes">
+For $s < t$ and a simple process adapted to a partition that includes $s$,
+
+$$
+M_t - M_s = \sum_{t_k\in[s,t)} H_k\,\Delta W_k.
+$$
+
+Each term $H_k\,\Delta W_k$ has mean zero conditionally on $\mathcal F_s$ (since $H_k$ is $\mathcal F_{t_k}\supseteq\mathcal F_s$-measurable and $\Delta W_k$ is independent of $\mathcal F_{t_k}$ with mean zero). Therefore
+
+$$
+\mathbb E[M_t - M_s\mid\mathcal F_s] = 0,
+\qquad\text{so}\quad
+\mathbb E[M_t\mid\mathcal F_s] = M_s.
+$$
+</ProofBox>
+
+<FinanceBox title="Trading P&L is a martingale under no-arbitrage">
+  If $H_t$ is the number of shares of a zero-drift asset held at time $t$, and the asset price satisfies
+  $dS_t = \sigma_t\,dW_t$ (a pure diffusion under the risk-neutral measure), then the portfolio value
+
+  $$
+  P_t = P_0 + \int_0^t H_s\,dS_s = P_0 + \int_0^t H_s\sigma_s\,dW_s
+  $$
+
+  is a martingale. The expected P&L is zero: there is no predictable profit without risk. This is the
+  mathematical content of no-arbitrage in diffusion models.
+</FinanceBox>
+
+---
+
+## 2.7 Quadratic variation of the Itô integral
+
+<TheoremBox title="Quadratic variation">
+Let $M_t = \int_0^t H_s\,dW_s$. Then the quadratic variation of $M$ is
+
+$$
+[M]_t = \int_0^t H_s^2\,ds.
+$$
+</TheoremBox>
+
+<ProofBox title="Proof sketch">
+On a uniform partition with mesh $\Delta t$,
+
+$$
+\sum_{k}(M_{t_{k+1}}-M_{t_k})^2
+\approx \sum_k H_{t_k}^2\,(\Delta W_k)^2
+\approx \sum_k H_{t_k}^2\,\Delta t
+\to\int_0^t H_s^2\,ds.
+$$
+
+The approximation uses $(dW)^2 = dt$ in the same sense as the quadratic variation of Brownian motion.
+</ProofBox>
+
+<GeometryBox title="Volatility as accumulated integrand squared">
+The quadratic variation $[M]_t = \int_0^t H_s^2\,ds$ is the accumulated squared magnitude of the integrand. In finance, if $H_t$ is the dollar amount in the risky asset and $dS/S = \sigma\,dW$, then the portfolio quadratic variation is $\int_0^t H_s^2\sigma_s^2\,ds$ — the accumulated squared dollar-volatility exposure.
+</GeometryBox>
+
+---
+
+## 2.8 Itô versus Stratonovich
+
+The Itô integral uses the **left endpoint** $H_k = H_{t_k}$. An alternative is the **Stratonovich integral**, which uses the **midpoint** $\frac12(H_{t_k}+H_{t_{k+1}})$:
+
+$$
+\int_0^T H_t\circ\,dW_t
+:= \lim_{|\Pi|\to 0}\sum_k \frac{H_{t_k}+H_{t_{k+1}}}{2}(W_{t_{k+1}}-W_{t_k}).
+$$
+
+The two integrals are related by the correction formula
+
+$$
+\int_0^T H_t\circ\,dW_t
+= \int_0^T H_t\,dW_t + \tfrac12[H,W]_T,
+$$
+
+where $[H,W]_T = \int_0^T dH_s\,dW_s$ is the cross-variation.
+
+For a smooth function $f$ applied to Brownian motion, $H_t = f(W_t)$, one computes
+
+$$
+[f(W),W]_T = \int_0^T f'(W_s)\,ds,
+$$
+
+so the Stratonovich integral satisfies the **classical chain rule**: $\int f'(W_t)\circ dW_t = f(W_T)-f(W_0)$. The Itô integral instead satisfies the modified Itô formula in Chapter 3.
+
+<WarningBox title="Which integral to use?">
+Itô: natural in finance (adapted integrands, no future look-ahead, martingale property), but its calculus has second-order correction terms.
+
+Stratonovich: natural in physics/geometry (satisfies classical chain rule, coordinate-invariant under manifold transformations), but uses anticipating information.
+
+In this course the default is Itô.
+</WarningBox>
+
+---
+
+## 2.9 The stochastic integral as a process
+
+For fixed $T$, the map $H\mapsto \int_0^T H_t\,dW_t$ is a random variable. But we can also view the integral as a process in the upper limit:
+
+$$
+M_t = \int_0^t H_s\,dW_s,\qquad 0\le t\le T.
+$$
+
+A version of $M$ with continuous sample paths exists whenever $H\in\mathcal L^2$.
+
+<TheoremBox title="Continuity and the Burkholder–Davis–Gundy inequality">
+For $H\in\mathcal L^2$, the martingale $M_t = \int_0^t H_s\,dW_s$ has a continuous version. Moreover, for any $p\ge 1$, there exist universal constants $c_p, C_p$ such that
+
+$$
+c_p\,\mathbb E\!\left[\left(\int_0^T H_s^2\,ds\right)^{p/2}\right]
+\le \mathbb E\!\left[\sup_{0\le t\le T}|M_t|^p\right]
+\le C_p\,\mathbb E\!\left[\left(\int_0^T H_s^2\,ds\right)^{p/2}\right].
+$$
+</TheoremBox>
+
+This inequality controls the supremum of the process in terms of the quadratic variation — a powerful tool in SDE existence theory.
+
+---
+
+## 2.10 A worked example
+
+**Compute $\int_0^T W_t\,dW_t$.**
+
+Here $H_t = W_t$. This is adapted. On a partition $\{t_k\}$, the Itô sum is
+
+$$
+I_n = \sum_{k=0}^{n-1} W_{t_k}\,(W_{t_{k+1}}-W_{t_k}).
+$$
+
+Use the algebraic identity $ab = \frac12[(a+b)^2 - a^2 - b^2]$:
+
+$$
+W_{t_k}(W_{t_{k+1}}-W_{t_k})
+= \tfrac12 W_{t_{k+1}}^2 - \tfrac12 W_{t_k}^2 - \tfrac12(W_{t_{k+1}}-W_{t_k})^2.
+$$
+
+Summing (telescoping):
+
+$$
+I_n = \tfrac12 W_T^2 - \tfrac12 W_0^2 - \tfrac12\sum_k(\Delta W_k)^2.
+$$
+
+Since $W_0 = 0$ and $\sum_k(\Delta W_k)^2\to T$,
+
+$$
+\int_0^T W_t\,dW_t = \tfrac12 W_T^2 - \tfrac12 T.
+$$
+
+The correction $-\frac T2$ is the signature of Itô calculus. Classical calculus would give $\int_0^T x\,dx = \frac12 x^2\big|_0^T = \frac12 T$ for $x = T$, but that is the wrong analogy. The Itô integral of $W_t$ against $dW_t$ is not $\frac12 T$; it is the random variable $\frac12 W_T^2 - \frac12 T$.
+
+---
+
+## 2.11 Problems
+
+<ProblemBox title="Problem 1: Itô isometry for a deterministic integrand">
+Let $H_t = h(t)$ be a deterministic square-integrable function. Compute $\text{Var}\!\left(\int_0^T h(t)\,dW_t\right)$ using the isometry.
+</ProblemBox>
+
+<ProblemBox title="Problem 2: Integral of a constant">
+Let $H_t = c$ (constant). Verify from the definition that $\int_0^T c\,dW_t = c\,W_T$, and check the Itô isometry.
+</ProblemBox>
+
+<ProblemBox title="Problem 3: Cross-variation">
+Let $M_t = \int_0^t H_s\,dW_s$ and $N_t = \int_0^t K_s\,dW_s$ for $H,K\in\mathcal L^2$. Show that
+
+$$
+[M,N]_T = \int_0^T H_s K_s\,ds.
+$$
+</ProblemBox>
+
+<ProblemBox title="Problem 4: The Stratonovich correction">
+If $H_t = W_t$, show that the Stratonovich integral satisfies
+
+$$
+\int_0^T W_t\circ\,dW_t = \tfrac12 W_T^2.
+$$
+
+Reconcile this with $\int_0^T W_t\,dW_t = \tfrac12 W_T^2 - \tfrac12 T$ via the correction formula.
+</ProblemBox>
+
+<ProblemBox title="Problem 5: Exponential martingale">
+Let $\theta\in\mathbb R$. Show that
+
+$$
+\mathcal E_t(\theta) = \exp\!\left(\theta W_t - \tfrac12\theta^2 t\right)
+$$
+
+is a martingale by verifying $d\mathcal E_t = \theta\mathcal E_t\,dW_t$ (use the Itô formula from Chapter 3 in anticipation).
+</ProblemBox>
+
+---
+
+## 2.12 Selected solutions
+
+<SolutionBox title="Solution 1">
+By the Itô isometry,
+
+$$
+\text{Var}\!\left(\int_0^T h(t)\,dW_t\right)
+= \mathbb E\!\left[\left(\int_0^T h(t)\,dW_t\right)^2\right]
+= \int_0^T h(t)^2\,dt.
+$$
+
+The integral is also Gaussian with mean zero, so the distribution is fully determined by this variance.
+</SolutionBox>
+
+<SolutionBox title="Solution 2">
+For constant $H_t = c$, the simple-process sum is $c\sum_k\Delta W_k = c(W_T - W_0) = cW_T$. The isometry gives $\mathbb E[(cW_T)^2] = c^2 T = c^2\int_0^T dt$. Both sides match.
+</SolutionBox>
+
+<SolutionBox title="Solution 3">
+By polarization: $[M,N] = \frac14([M+N,M+N] - [M-N,M-N])$. The quadratic variation of $\int(H\pm K)\,dW$ is $\int(H\pm K)^2\,ds$. Therefore
+
+$$
+[M,N]_T = \frac14\int_0^T[(H+K)^2-(H-K)^2]\,ds = \int_0^T H_s K_s\,ds.
+$$
+</SolutionBox>
+
+<SolutionBox title="Solution 4">
+On each subinterval, the Stratonovich term is
+
+$$
+\frac{W_{t_k}+W_{t_{k+1}}}{2}\,\Delta W_k
+= W_{t_k}\,\Delta W_k + \tfrac12(\Delta W_k)^2.
+$$
+
+Summing and passing to the limit,
+
+$$
+\int_0^T W_t\circ\,dW_t
+= \int_0^T W_t\,dW_t + \tfrac12[W]_T
+= \left(\tfrac12 W_T^2 - \tfrac12 T\right) + \tfrac12 T
+= \tfrac12 W_T^2,
+$$
+
+which is the ordinary calculus answer.
+</SolutionBox>
+
+---
+
+## 2.13 What this chapter gives you
+
+The Itô integral $\int_0^T H_t\,dW_t$ is:
+
+| Property | Statement |
+|---|---|
+| Well-defined | for $H\in L^2_{\mathrm{ad}}$ via $L^2$ completion |
+| Zero mean | $\mathbb E[\int H\,dW] = 0$ |
+| $L^2$ isometry | $\mathbb E[(\int H\,dW)^2] = \mathbb E[\int H^2\,dt]$ |
+| Martingale | $(M_t = \int_0^t H\,dW)$ is a martingale |
+| Quadratic variation | $[M]_t = \int_0^t H_s^2\,ds$ |
+| Continuous paths | a continuous version of $M_t$ exists |
+
+The next chapter derives Itô's formula, the chain rule of stochastic calculus. Itô's formula is what makes the integral computable and connects it to classical analysis and partial differential equations.

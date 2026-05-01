@@ -1,0 +1,257 @@
+---
+id: chapter-09-generators
+title: Chapter 9 — Diffusions and Generators
+sidebar_label: '9. Diffusions & Generators'
+---
+
+import GeneratorDemo from '@site/src/components/GeneratorDemo';
+import {
+  MotivationBox,
+  GeometryBox,
+  TheoremBox,
+  ProofBox,
+  FinanceBox,
+  ProblemBox,
+  SolutionBox,
+  WarningBox,
+} from '@site/src/components/CourseBoxes';
+
+# Chapter 9 — Diffusions and Generators
+
+<MotivationBox title="Guiding question">
+  Given an SDE $dX = b(X)\,dt + \sigma(X)\,dW$, is there a single operator that encodes everything
+  about how smooth functions evolve under $X$? How does this operator connect SDEs to partial
+  differential equations?
+</MotivationBox>
+
+The infinitesimal generator $\mathcal L$ is the differential operator that describes the local behavior of a diffusion process. It packages Itô's formula into a single operator, and its study bridges stochastic analysis and classical analysis. The generator is the stochastic analogue of the derivative — it measures how fast the expected value of a function changes along the process.
+
+---
+
+## 9.1 The infinitesimal generator: definition
+
+Let $X$ be the strong solution of $dX_t = b(X_t)\,dt + \sigma(X_t)\,dW_t$. For a smooth function $f:\mathbb R\to\mathbb R$ with compact support, define:
+
+$$
+\mathcal L f(x) = \lim_{t\downarrow 0}\frac{\mathbb E^x[f(X_t)] - f(x)}{t},
+$$
+
+where $\mathbb E^x[\cdot] = \mathbb E[\cdot\mid X_0 = x]$.
+
+By Itô's formula, the limit exists and equals:
+
+$$
+\boxed{\mathcal L f(x) = b(x)f'(x) + \tfrac12\sigma(x)^2 f''(x).}
+$$
+
+<ProofBox title="Derivation from Itô's formula">
+By Itô's formula with $f\in C^2$:
+
+$$
+f(X_t) = f(x) + \int_0^t [b(X_s)f'(X_s) + \tfrac12\sigma^2(X_s)f''(X_s)]\,ds + \int_0^t\sigma(X_s)f'(X_s)\,dW_s.
+$$
+
+Taking expectations (the stochastic integral has zero expectation):
+
+$$
+\mathbb E^x[f(X_t)] = f(x) + \mathbb E^x\!\left[\int_0^t\mathcal L f(X_s)\,ds\right].
+$$
+
+Dividing by $t$ and taking $t\to 0$ (using $X_s\to x$ and continuity of $\mathcal Lf$):
+
+$$
+\lim_{t\to 0}\frac{\mathbb E^x[f(X_t)]-f(x)}{t} = \mathcal L f(x).
+$$
+</ProofBox>
+
+---
+
+## 9.2 Examples of generators
+
+**Brownian motion** ($b=0$, $\sigma=1$):
+
+$$
+\mathcal L_{\rm BM} f = \tfrac12 f''.
+$$
+
+This is $\frac12$ the Laplacian (or the heat operator in one dimension).
+
+**Geometric Brownian Motion** ($b=\mu x$, $\sigma = \sigma x$):
+
+$$
+\mathcal L_{\rm GBM} f = \mu x f' + \tfrac12\sigma^2 x^2 f''.
+$$
+
+**Ornstein–Uhlenbeck** ($b=\kappa(\theta-x)$, $\sigma=\sigma$):
+
+$$
+\mathcal L_{\rm OU} f = \kappa(\theta-x)f' + \tfrac12\sigma^2 f''.
+$$
+
+**CIR** ($b=\kappa(\theta-x)$, $\sigma=\sigma\sqrt{x}$):
+
+$$
+\mathcal L_{\rm CIR} f = \kappa(\theta-x)f' + \tfrac12\sigma^2 x f''.
+$$
+
+---
+
+## 9.3 Dynkin's formula
+
+<TheoremBox title="Dynkin's formula">
+Let $\tau$ be a stopping time with $\mathbb E^x[\tau]<\infty$ and $f\in\text{Dom}(\mathcal L)$ (the domain of the generator). Then
+
+$$
+\mathbb E^x[f(X_\tau)] = f(x) + \mathbb E^x\!\left[\int_0^\tau \mathcal L f(X_s)\,ds\right].
+$$
+</TheoremBox>
+
+<ProofBox title="Proof via optional stopping">
+The process $M_t = f(X_t) - f(x) - \int_0^t\mathcal L f(X_s)\,ds$ is a local martingale (by Itô's formula). Under appropriate integrability, the optional stopping theorem applies at $\tau$: $\mathbb E^x[M_\tau]=0$, which is Dynkin's formula.
+</ProofBox>
+
+<GeneratorDemo />
+
+---
+
+## 9.4 Harmonic functions
+
+A function $f$ is **$\mathcal L$-harmonic** on a domain $D$ if $\mathcal L f = 0$ on $D$.
+
+<TheoremBox title="Mean value property for diffusions">
+If $\mathcal L f = 0$ on $D$ and $\tau_D = \inf\{t: X_t\notin D\}$ is the first exit time from $D$ (with $\mathbb E^x[\tau_D]<\infty$), then
+
+$$
+f(x) = \mathbb E^x[f(X_{\tau_D})].
+$$
+
+The value at any interior point equals the expected boundary value.
+</TheoremBox>
+
+<ProofBox title="Proof">
+By Dynkin's formula: $\mathbb E^x[f(X_{\tau_D})] = f(x) + \mathbb E^x[\int_0^{\tau_D}\mathcal L f(X_s)\,ds] = f(x)$, since $\mathcal L f = 0$.
+</ProofBox>
+
+<GeometryBox title="Diffusions average over their domain">
+For ordinary Brownian motion, $\mathcal L f = \frac12f''=0$ means $f$ is linear (in 1D). The mean value property says: the value of a linear function at any point equals its average on any symmetric interval. For multidimensional BM, harmonic functions satisfy the classical mean value property of harmonic analysis.
+
+For diffusions with drift and varying diffusion, "harmonic" is with respect to the weighted operator $b\cdot\nabla + \frac12\sigma^2\Delta$ — the natural geometry determined by the SDE.
+</GeometryBox>
+
+---
+
+## 9.5 The Kolmogorov equations
+
+The generator connects SDEs to two classical PDEs.
+
+**Forward (Fokker–Planck) equation.** The probability density $p(t,y;0,x) = \partial_y\mathbb P^x(X_t\le y)$ satisfies the PDE (written for the $y$-variable):
+
+$$
+\partial_t p = \mathcal L^* p,
+$$
+
+where $\mathcal L^*$ is the adjoint operator:
+
+$$
+\mathcal L^* p = -\partial_y(b(y)p) + \tfrac12\partial_{yy}(\sigma^2(y)p).
+$$
+
+This describes how the probability mass flows forward in time.
+
+**Backward (Kolmogorov backward) equation.** The function $u(t,x) = \mathbb E^x[f(X_T)\mid X_t = x]$ satisfies the PDE (written for the $x$-variable):
+
+$$
+\partial_t u + \mathcal L_x u = 0,\qquad u(T,x) = f(x).
+$$
+
+The subscript $x$ means $\mathcal L$ acts on the spatial variable $x$, with $t$ as a parameter.
+
+<GeometryBox title="Forward vs backward: two perspectives on the same dynamics">
+The forward equation tracks the evolving probability distribution of $X_t$. The backward equation tracks the conditional expectation of a functional, running time backward from the terminal condition.
+
+In option pricing:
+- Forward equation = time-evolution of the stock price density (used in local volatility calibration).
+- Backward equation = the option price PDE (Black–Scholes, Feynman–Kac).
+
+Both encode the same SDE; the difference is which variable (current state vs future payoff) is being tracked.
+</GeometryBox>
+
+---
+
+## 9.6 Generators in $d$ dimensions
+
+For the $d$-dimensional SDE $d\mathbf X = \mathbf b(\mathbf X)\,dt + \boldsymbol\sigma(\mathbf X)\,d\mathbf W$, the generator is:
+
+$$
+\mathcal L f(\mathbf x)
+= \sum_i b_i(\mathbf x)\,\partial_i f(\mathbf x)
++ \tfrac12\sum_{i,j}(\sigma\sigma^\top)_{ij}(\mathbf x)\,\partial_{ij}f(\mathbf x).
+$$
+
+The matrix $A = \sigma\sigma^\top$ is the **diffusion matrix**. The generator is:
+
+$$
+\mathcal L = \mathbf b\cdot\nabla + \tfrac12\text{tr}(A\,\nabla^2).
+$$
+
+For $A = I$ and $\mathbf b = 0$: $\mathcal L = \frac12\Delta$ (half-Laplacian).
+
+<FinanceBox title="Generator of GBM in finance">
+  For GBM $dS = rS\,dt + \sigma S\,dW$ (risk-neutral), the generator is:
+
+  $$\mathcal L_{\rm BS} = rS\,\partial_S + \tfrac12\sigma^2 S^2\,\partial_{SS}.$$
+
+  The Black–Scholes PDE is $\partial_t f + \mathcal L_{\rm BS} f = rf$, i.e.,
+
+  $$(\partial_t + \mathcal L_{\rm BS} - r)f = 0.$$
+
+  The operator $\mathcal L_{\rm BS} - r$ is the Black–Scholes operator: its null space consists of
+  correctly priced option prices. Adding $r$ on the right reflects discounting at the risk-free rate.
+</FinanceBox>
+
+---
+
+## 9.7 Problems
+
+<ProblemBox title="Problem 1: Generator of OU">
+For $dX = -\kappa X\,dt + \sigma\,dW$, compute $\mathcal L(x^2)$ and verify via Dynkin that $\mathbb E^x[X_t^2] = x^2 e^{-2\kappa t} + \frac{\sigma^2}{2\kappa}(1-e^{-2\kappa t})$.
+</ProblemBox>
+
+<ProblemBox title="Problem 2: Harmonic function for BM">
+Find all functions $f$ on $(a,b)$ with $\mathcal L_{\rm BM}f = \frac12 f'' = 0$. What does the mean value property say for BM on $(a,b)$?
+</ProblemBox>
+
+<ProblemBox title="Problem 3: CIR generator applied to bond price">
+For CIR with $\mathcal L f = \kappa(\theta-x)f' + \frac12\sigma^2 xf''$, show that the function $f(x) = e^{-Bx}$ (for constant $B$) satisfies $\mathcal L f = (\kappa\theta B - \frac12\sigma^2 B^2 x + \kappa Bx - \kappa\theta B)\cdots$ — work out the full calculation as a step toward Vasicek bond pricing.
+</ProblemBox>
+
+---
+
+## 9.8 Selected solutions
+
+<SolutionBox title="Solution 1">
+$\mathcal L(x^2) = -\kappa x\cdot 2x + \frac12\sigma^2\cdot 2 = -2\kappa x^2 + \sigma^2$.
+
+By Dynkin: $\frac{d}{dt}\mathbb E^x[X_t^2] = \mathbb E^x[\mathcal L(X_t^2)] = -2\kappa\mathbb E^x[X_t^2] + \sigma^2$.
+
+This is an ODE $\dot v = -2\kappa v + \sigma^2$ with solution $v(t) = \frac{\sigma^2}{2\kappa} + (x^2 - \frac{\sigma^2}{2\kappa})e^{-2\kappa t}$. This matches the known variance formula.
+</SolutionBox>
+
+<SolutionBox title="Solution 2">
+$f''=0$ implies $f(x) = ax + b$ (linear functions). The mean value property: for BM starting at $x\in(a,b)$, $f(x) = \mathbb E^x[f(X_{\tau_{ab}})]$, where $\tau_{ab}$ is the first exit time from $(a,b)$. For $f$ linear, the Brownian paths "average" to reach the boundary at $a$ or $b$ proportionally: $f(x) = f(a)\mathbb P^x(X_{\tau}=a) + f(b)\mathbb P^x(X_{\tau}=b)$. With $\mathbb P^x(X_\tau=b) = (x-a)/(b-a)$, this gives $f(x) = f(a)\frac{b-x}{b-a} + f(b)\frac{x-a}{b-a}$, which is consistent with linearity.
+</SolutionBox>
+
+---
+
+## 9.9 What this chapter gives you
+
+| Concept | Formula |
+|---|---|
+| Infinitesimal generator | $\mathcal L f = b f' + \frac12\sigma^2 f''$ |
+| Dynkin's formula | $\mathbb E^x[f(X_\tau)] = f(x) + \mathbb E^x[\int_0^\tau \mathcal L f\,ds]$ |
+| Harmonic functions | $\mathcal Lf = 0 \Rightarrow f(x) = \mathbb E^x[f(X_{\tau_D})]$ |
+| Forward equation | $\partial_t p = \mathcal L^*p$ (density evolution) |
+| Backward equation | $\partial_t u + \mathcal Lu = 0$, $u(T,\cdot) = g$ |
+| Black–Scholes operator | $\mathcal L_{\rm BS} = rS\partial_S + \frac12\sigma^2 S^2\partial_{SS}$ |
+
+The next chapter derives the Feynman–Kac formula, which makes the correspondence between conditional expectations and PDEs precise and quantitative.

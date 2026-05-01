@@ -1,0 +1,326 @@
+---
+id: chapter-14-advanced-geometry
+title: Chapter 14 — Advanced Geometry of SDEs
+sidebar_label: '14. Advanced Geometry'
+---
+
+import {
+  MotivationBox,
+  GeometryBox,
+  TheoremBox,
+  ProofBox,
+  FinanceBox,
+  ProblemBox,
+  SolutionBox,
+  WarningBox,
+} from '@site/src/components/CourseBoxes';
+
+# Chapter 14 — Advanced Geometry of SDEs
+
+<MotivationBox title="Guiding question">
+  Itô's integral has a non-zero correction term that breaks the classical chain rule. Is this a defect,
+  or does it reveal something geometric? What happens when the state space is a manifold rather than
+  $\mathbb R^n$? And how does the theory extend when paths are rougher than Brownian?
+</MotivationBox>
+
+This final chapter steps back from computation and asks: what is the intrinsic geometry of stochastic differential equations? Three interconnected ideas:
+
+1. **Stratonovich vs Itô**: the two integrals encode two different conventions about "time and space," and the Stratonovich integral is the one that respects the geometry of the state space.
+2. **SDEs on manifolds**: when the state space is curved (a Lie group, a sphere), the Itô and Stratonovich equations differ in a geometrically meaningful way.
+3. **Rough paths**: Lyon's theory extends stochastic calculus beyond semimartingales to paths of finite $p$-variation, with Brownian motion as a special case.
+
+---
+
+## 14.1 Revisiting the Stratonovich integral
+
+Recall from Chapter 2 that the Itô integral uses the **left endpoint** rule and the Stratonovich integral uses the **midpoint** rule:
+
+$$
+\int_0^T H_t\circ\,dW_t = \lim_{|\Pi|\to 0}\sum_k\frac{H_{t_k}+H_{t_{k+1}}}{2}(W_{t_{k+1}}-W_{t_k}).
+$$
+
+The relationship between the two is:
+
+$$
+\int_0^T H_t\circ\,dW_t = \int_0^T H_t\,dW_t + \tfrac12[H,W]_T.
+$$
+
+For $H_t = f(W_t)$: $[H,W]_T = \int_0^T f'(W_t)\,dt$. Therefore:
+
+$$
+\int_0^T f(W_t)\circ\,dW_t = \int_0^T f(W_t)\,dW_t + \tfrac12\int_0^T f'(W_t)\,dt.
+$$
+
+**Stratonovich chain rule.** For the Stratonovich integral, the chain rule is classical:
+
+$$
+f(W_T) - f(W_0) = \int_0^T f'(W_t)\circ\,dW_t.
+$$
+
+No second derivative term appears. This is the "coordinate-free" form of the chain rule, which is why Stratonovich appears naturally on manifolds.
+
+---
+
+## 14.2 SDE conversions: Itô $\leftrightarrow$ Stratonovich
+
+An SDE in Stratonovich form:
+
+$$
+dX_t = b(X_t)\,dt + \sigma(X_t)\circ\,dW_t
+$$
+
+is equivalent to the Itô SDE:
+
+$$
+dX_t = \left[b(X_t) + \tfrac12\sigma'(X_t)\sigma(X_t)\right]dt + \sigma(X_t)\,dW_t.
+$$
+
+The extra term $\frac12\sigma'\sigma$ is the Itô–Stratonovich correction.
+
+<GeometryBox title="Why Stratonovich is coordinate-free">
+Under a smooth change of variables $y = \phi(x)$, the Itô SDE for $Y_t = \phi(X_t)$ involves $\phi''$ (from the second-order Taylor expansion). But in Stratonovich form, $Y_t$ satisfies the "obvious" chain rule $dY = \phi'(X)\circ dX$ — no second-derivative correction. This is why Stratonovich is the correct integral for SDEs defined on manifolds (where coordinates can be changed freely) and for physical models that arise as limits of smooth systems under fast noise.
+</GeometryBox>
+
+---
+
+## 14.3 SDEs on manifolds
+
+Let $\mathcal M$ be a smooth $d$-dimensional manifold embedded in $\mathbb R^n$. A process $X_t\in\mathcal M$ for all $t$ is called an **$\mathcal M$-valued diffusion**.
+
+The intrinsic SDE on $\mathcal M$ is written in Stratonovich form:
+
+$$
+dX_t = V_0(X_t)\,dt + \sum_{k=1}^m V_k(X_t)\circ\,dW_t^k,
+$$
+
+where $V_0, V_1,\ldots,V_m$ are smooth vector fields on $\mathcal M$. In local coordinates $(x^1,\ldots,x^d)$:
+
+$$
+dX_t^i = V_0^i(X_t)\,dt + \sum_k V_k^i(X_t)\circ\,dW_t^k.
+$$
+
+The Stratonovich form guarantees that $X_t$ stays on $\mathcal M$: if $\phi:\mathcal M\to\mathbb R$ is a smooth function, $\phi(X_t)$ satisfies the classical chain rule in Stratonovich form.
+
+**Example: Brownian motion on $S^2$.** The 2-sphere $S^2 = \{x\in\mathbb R^3: |x|=1\}$ supports a natural Brownian motion (the spherical BM). It is the Stratonovich SDE driven by the two angular Brownian motions in the tangent bundle.
+
+**Example: Stochastic flows.** The stochastic flow $\phi_{s,t}: x\mapsto X_t^{s,x}$ (solving $dX = b(X)\,dt + \sigma(X)\circ dW$, $X_s = x$) is a family of diffeomorphisms of $\mathcal M$, driven by the Stratonovich integral.
+
+---
+
+## 14.4 The generator on manifolds
+
+In local coordinates on $\mathcal M$, the generator of the Stratonovich SDE above is:
+
+$$
+\mathcal L = V_0 + \tfrac12\sum_k V_k^2,
+$$
+
+where $V_k^2 = V_k(V_k f)$ is the second-order differential operator. In terms of the Riemannian metric $g$ on $\mathcal M$, if $\sigma\sigma^\top = g^{-1}$ (the inverse metric), then $\sum_k V_k^2 = \Delta_g$, the Laplace–Beltrami operator.
+
+The Brownian motion on a Riemannian manifold is defined as the diffusion with generator $\frac12\Delta_g$.
+
+<GeometryBox title="The Laplacian as a generator">
+For flat space $\mathcal M = \mathbb R^n$ with Euclidean metric, $\Delta_g = \Delta$ (the ordinary Laplacian). For a sphere $S^2$ with the round metric, $\Delta_g$ is the spherical Laplacian. For a financial manifold (e.g., the space of covariance matrices), the Laplacian encodes the "isotropic" diffusion intrinsic to that space.
+
+The deep geometric fact: Brownian motion on any Riemannian manifold is the unique diffusion that is symmetric with respect to the volume measure, has no drift, and generates the Laplace–Beltrami operator. It is the canonical random walker on curved spaces.
+</GeometryBox>
+
+---
+
+## 14.5 Hörmander's theorem and hypoellipticity
+
+For the SDE $dX = V_0\,dt + \sum_k V_k\circ dW^k$ on $\mathbb R^n$, the process $X_t$ has a smooth density at time $t>0$ if the **Lie algebra generated by $V_1,\ldots,V_m$ spans $\mathbb R^n$** at every point.
+
+Formally: the Hörmander condition says that the vector fields $\{V_k\}$ and all their iterated Lie brackets $[V_i,V_j]$, $[V_i,[V_j,V_k]]$, etc., span the full tangent space. This is a form of "geometric controllability."
+
+<TheoremBox title="Hörmander's theorem (informal)">
+If the Hörmander condition holds, the SDE's generator $\mathcal L$ is **hypoelliptic**: the equation $\mathcal Lu = f$ has a smooth solution $u$ whenever $f$ is smooth. Equivalently, the law of $X_t$ has a smooth density for all $t > 0$.
+</TheoremBox>
+
+This is remarkable: even if $m < n$ (fewer BMs than dimensions), the process can spread into all dimensions through Lie bracket interactions. An SDE can be "essentially $n$-dimensional" even when driven by fewer Brownian motions.
+
+---
+
+## 14.6 Rough paths: an introduction
+
+The rough paths theory of Terry Lyons (1998) extends stochastic integration beyond semimartingales. The key insight: integrating against a rough path requires specifying not just the path but also its **iterated integrals**.
+
+**The problem.** For a path $X:[0,T]\to\mathbb R^d$ of finite $p$-variation ($p\in(2,3)$), the naive Riemann sums $\sum f(X_{t_k})(X_{t_{k+1}}-X_{t_k})$ do not converge without additional data.
+
+The additional data needed is the **Lévy area**:
+
+$$
+\mathbb X_{s,t}^{ij} = \int_s^t(X_r^i - X_s^i)\,dX_r^j.
+$$
+
+This is the "area swept" by the path in the $(i,j)$-plane from $s$ to $t$.
+
+<TheoremBox title="Lyons' continuity theorem (informal)">
+For a rough path $\mathbf X = (X, \mathbb X)$ (path plus its iterated integrals), the solution map
+
+$$
+\mathbf X\mapsto Y,\quad\text{where }Y_t = y_0 + \int_0^t f(Y_s)\,d\mathbf X_s,
+$$
+
+is **continuous** in the rough path topology. Small perturbations of $\mathbf X$ produce small perturbations of $Y$.
+</TheoremBox>
+
+**Why this matters.** Brownian motion, viewed as a rough path, needs to be enhanced by the Itô or Stratonovich Lévy area:
+
+$$
+\mathbb W^{{\rm Ito},ij}_{s,t} = \int_s^t(W_r^i-W_s^i)\,dW_r^j\quad(\text{Itô})
+\quad\text{vs}\quad
+\mathbb W^{{\rm Strat},ij}_{s,t} = \int_s^t(W_r^i-W_s^i)\circ\,dW_r^j\quad(\text{Stratonovich}).
+$$
+
+The difference is $\mathbb W^{{\rm Strat}}_{s,t} - \mathbb W^{{\rm Ito}}_{s,t} = \frac12(t-s)\delta_{ij}$. This is the Itô–Stratonovich correction, re-derived from the geometry of iterated integrals.
+
+<GeometryBox title="Rough paths as non-commutative geometry">
+The Lévy area is not redundant information — it captures how the two-dimensional projection of the path winds around the origin. When you compose two rough paths (the "composition" in path space), the Lévy area transforms non-trivially, like elements of a non-abelian Lie group. This is why rough path theory is deeply connected to the theory of free Lie algebras and the Chen–Strichartz expansion.
+
+Practical impact: rough paths provide a unified framework for approximating SDEs driven by non-Brownian rough signals (fractional Brownian motion, wind, finance data), with rigorous error bounds.
+</GeometryBox>
+
+---
+
+## 14.7 Stochastic flows and diffeomorphisms
+
+For the SDE $dX_t = b(t,X_t)\,dt + \sigma(t,X_t)\,dW_t$ (in Stratonovich form), the map $x\mapsto X_t(x)$ (varying over initial conditions $X_0 = x$) defines a **stochastic flow of diffeomorphisms**.
+
+<TheoremBox title="Existence of smooth flows">
+Under suitable smoothness and growth conditions on $b,\sigma$, the solution map $x\mapsto X_t(x)$ is almost surely a $C^k$ diffeomorphism for each $t$.
+</TheoremBox>
+
+This means one can speak of the Jacobian $J_t = \partial X_t/\partial X_0$, which satisfies the **variational equation**:
+
+$$
+dJ_t = \partial_x b(t,X_t)\,J_t\,dt + \partial_x\sigma(t,X_t)\,J_t\circ\,dW_t.
+$$
+
+This is a linear Stratonovich SDE for $J_t$. Its solution describes how small perturbations to the initial condition evolve — the stochastic analogue of Lyapunov exponents.
+
+<FinanceBox title="Applications of stochastic flows in quantitative finance">
+  **Malliavin calculus** (the calculus of variations for stochastic processes) uses the variation
+  $J_t = \partial X_t/\partial X_0$ to compute Greeks by the formula:
+
+  $$\Delta = \partial_{S_0}\mathbb E[f(X_T)] = \mathbb E\!\left[f(X_T)\frac{J_T W_T}{T S_0}\right].$$
+
+  This avoids finite-difference bumping and gives exact Greeks for complex payoffs.
+
+  **Path sensitivity (algorithmic differentiation)** in modern risk systems tracks Jacobians of
+  stochastic flows through simulation, enabling fast computation of all Greeks simultaneously.
+</FinanceBox>
+
+---
+
+## 14.8 The Stroock–Varadhan support theorem
+
+For an SDE $dX = b(X)\,dt + \sigma(X)\circ dW$, the **support theorem** says that the support of the law of the full path $X_{[0,T]}$ (as a measure on $C([0,T],\mathbb R^n)$) consists of exactly those paths that can be approximated by solutions with smooth control inputs:
+
+$$
+\text{supp}(\mathcal L(X)) = \overline{\{y_t^h: h\in C^1([0,T],\mathbb R^m)\}},
+$$
+
+where $y^h$ solves the ODE $dy_t^h = b(y_t^h)\,dt + \sigma(y_t^h)h'_t\,dt$.
+
+In other words, the set of paths that actually occur (with positive probability) is the closure of the set of paths reachable by the deterministic system under all smooth controls. This identifies the support of the SDE with the reachable set of a controlled ODE.
+
+---
+
+## 14.9 Summary: the geometry of SDEs
+
+| Object | Itô form | Stratonovich form |
+|---|---|---|
+| SDE | $dX = b\,dt + \sigma\,dW$ | $dX = b\,dt + \sigma\circ dW$ |
+| Chain rule | Modified (extra $\frac12\sigma^2 f''$ term) | Classical |
+| Transformation | Requires $f''$ correction | Coordinate-free |
+| On manifolds | Awkward (coordinate-dependent) | Natural |
+| Martingale property | Yes (for Itô integral) | No (Stratonovich integral has drift) |
+| Physical interpretation | Matched to filtration, left-adapted | Matched to smooth path limits |
+
+**Rough paths extend** stochastic calculus to:
+- Paths with $p$-variation for $p > 2$ (rougher than BM)
+- Fractional BM $W^H$ with $H < 1/2$
+- Non-Markovian drivers from data
+
+The rough path interpretation of Itô/Stratonovich as different choices of Lévy area is the deepest geometric statement connecting the two conventions.
+
+---
+
+## 14.10 Problems
+
+<ProblemBox title="Problem 1: Stratonovich chain rule">
+Verify directly that $\int_0^T W_t\circ dW_t = \frac12 W_T^2$ (no correction) by computing the Stratonovich sum and comparing with the Itô result $\int_0^T W_t\,dW_t = \frac12 W_T^2 - \frac12 T$.
+</ProblemBox>
+
+<ProblemBox title="Problem 2: Itô–Stratonovich conversion">
+For $dX = -\kappa X\,dt + \sigma\circ dW$ (OU in Stratonovich form), find the equivalent Itô form. Are they the same here? (Compare $\sigma'$ for additive noise.)
+</ProblemBox>
+
+<ProblemBox title="Problem 3: GBM in Stratonovich form">
+The GBM $dS = \mu S\,dt + \sigma S\,dW$ (Itô) becomes $dS = (\mu + \frac12\sigma^2)S\,dt + \sigma S\circ dW$ (Stratonovich). Verify this conversion. Interpret: in Stratonovich form, the "drift" is $\mu + \frac12\sigma^2$, not $\mu - \frac12\sigma^2$ as in the log.
+</ProblemBox>
+
+<ProblemBox title="Problem 4: Lévy area heuristic">
+For BM in $\mathbb R^2$, the Lévy area $A_T = \int_0^T(W^1\,dW^2 - W^2\,dW^1)/2$ is the signed area enclosed by the Brownian path. Compute $\mathbb E[A_T]$ and $\text{Var}(A_T)$.
+</ProblemBox>
+
+---
+
+## 14.11 Selected solutions
+
+<SolutionBox title="Solution 1">
+From Solution 4 of Chapter 2: the Stratonovich sum converges to $\int_0^T W_t\,dW_t + \frac12[W]_T = \frac12 W_T^2 - \frac12 T + \frac12 T = \frac12 W_T^2$. The ordinary calculus result $\int x\,dx = \frac12 x^2$ holds for Stratonovich.
+</SolutionBox>
+
+<SolutionBox title="Solution 2">
+For additive noise $\sigma(X) = \sigma$ (constant), $\sigma'(X) = 0$. The Itô–Stratonovich correction $\frac12\sigma'(X)\sigma(X) = 0$ vanishes. The Itô and Stratonovich forms are identical for additive noise. The OU process $dX = -\kappa X\,dt + \sigma\circ dW$ is the same as $dX = -\kappa X\,dt + \sigma\,dW$.
+</SolutionBox>
+
+<SolutionBox title="Solution 3">
+For $\sigma(S) = \sigma S$: $\sigma'(S) = \sigma$. The correction is $\frac12\sigma'(S)\sigma(S) = \frac12\sigma^2 S$. So the Stratonovich drift is $\mu S + \frac12\sigma^2 S = (\mu+\frac12\sigma^2)S$.
+
+This confirms: in Stratonovich form, GBM is $dS = (\mu+\frac12\sigma^2)S\,dt + \sigma S\circ dW$. The log of $S$ satisfies the classical chain rule in Stratonovich: $d\log S = (\mu+\frac12\sigma^2)\,dt + \sigma\circ dW$. But when we convert to Itô (using $\frac12\cdot 1\cdot \sigma^2\,dt = \frac12\sigma^2\,dt$ correction), we get the $\mu - \frac12\sigma^2$ drift.
+</SolutionBox>
+
+<SolutionBox title="Solution 4">
+The Lévy area $A_T = \frac12\int_0^T W^1\,dW^2 - W^2\,dW^1$. Since $\mathbb E[\int W^i\,dW^j] = 0$ for $i\ne j$ (the integrals are martingales with zero mean), $\mathbb E[A_T] = 0$.
+
+For the variance: by the Itô isometry, $\text{Var}(A_T) = \frac14\text{Var}(\int_0^T W^1\,dW^2 - W^2\,dW^1)$. Using $\mathbb E[(\int W^1\,dW^2)^2] = \int_0^T\mathbb E[(W^1)^2]\,dt = \int_0^T t\,dt = T^2/2$, and similarly for the other term. The cross-term vanishes by independence. Therefore $\text{Var}(A_T) = \frac14(T^2/2 + T^2/2) = T^2/4$.
+</SolutionBox>
+
+---
+
+## 14.12 Course retrospective
+
+Looking back at the full arc:
+
+| Chapter | Core idea |
+|---|---|
+| 1 | BM from random walks; scaling, covariance, martingale, quadratic variation |
+| 2 | Itô integral: $L^2$ construction, isometry, martingale property |
+| 3 | Itô's formula: chain rule with second-order correction |
+| 4 | SDE existence: Picard iteration, Gronwall, Lipschitz |
+| 5 | Exact solutions: GBM, OU, CIR |
+| 6 | Girsanov: drift = change of measure |
+| 7 | Black–Scholes: hedging = martingale representation |
+| 8 | Multi-dimensional calculus, covariation |
+| 9 | Generator: operator view of SDEs |
+| 10 | Feynman–Kac: expectation $\leftrightarrow$ PDE |
+| 11 | Volatility models: local vol, Heston |
+| 12 | Term structure: Vasicek, CIR, HJM |
+| 13 | Numerical methods: Euler, Milstein, variance reduction |
+| 14 | Geometry: Stratonovich, manifolds, rough paths |
+
+The mathematical spine is:
+$$
+\underbrace{(dW)^2 = dt}_{\text{quadratic variation}}
+\implies
+\underbrace{df = f'\,dW + \tfrac12 f''\,dt}_{\text{Itô's formula}}
+\implies
+\underbrace{\text{pricing PDEs}}_{\text{Feynman–Kac}}
+\implies
+\underbrace{\text{risk-neutral pricing}}_{\text{Girsanov}}.
+$$
+
+Everything flows from the single fact that Brownian paths accumulate quadratic variation at rate $dt$.

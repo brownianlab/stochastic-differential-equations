@@ -1,0 +1,244 @@
+---
+id: chapter-13-numerical-methods
+title: Chapter 13 — Numerical Methods for SDEs
+sidebar_label: '13. Numerical Methods'
+---
+
+import EulerMaruyamaDemo from '@site/src/components/EulerMaruyamaDemo';
+import {
+  MotivationBox,
+  GeometryBox,
+  TheoremBox,
+  ProofBox,
+  FinanceBox,
+  ProblemBox,
+  SolutionBox,
+  WarningBox,
+} from '@site/src/components/CourseBoxes';
+
+# Chapter 13 — Numerical Methods for SDEs
+
+<MotivationBox title="Guiding question">
+  Most SDEs have no closed-form solution. How do we simulate sample paths accurately? What is the
+  difference between strong and weak convergence, and which matters for pricing versus hedging?
+</MotivationBox>
+
+Numerical methods for SDEs generalize ODE integrators, but with a fundamental new challenge: Brownian paths are not smooth. This creates a limit to convergence rates that has no analogue in deterministic integration.
+
+---
+
+## 13.1 The Euler–Maruyama scheme
+
+For the SDE $dX_t = b(X_t)\,dt + \sigma(X_t)\,dW_t$ on $[0,T]$, fix a uniform grid $t_k = k\Delta t$ with $\Delta t = T/n$. The **Euler–Maruyama** scheme:
+
+$$
+X_{k+1}^{(n)} = X_k^{(n)} + b(X_k^{(n)})\Delta t + \sigma(X_k^{(n)})\sqrt{\Delta t}\,Z_{k+1},
+$$
+
+where $Z_1,\ldots,Z_n\overset{\text{i.i.d.}}{\sim}N(0,1)$ are the discretized Brownian increments.
+
+The Brownian motion is reconstructed by $\Delta W_k = \sqrt{\Delta t}\,Z_k$, consistent with $W_{t_{k+1}} - W_{t_k}\sim N(0,\Delta t)$.
+
+<EulerMaruyamaDemo />
+
+---
+
+## 13.2 Strong and weak convergence
+
+Two notions of convergence measure different aspects of approximation quality.
+
+**Strong convergence** measures pathwise error:
+
+$$
+\mathbb E\!\left[\sup_{k}|X_{t_k}^{(n)} - X_{t_k}|\right] = O(\Delta t^p).
+$$
+
+Strong order $p$ means the simulated path is close to the true path.
+
+**Weak convergence** measures distributional error for smooth test functions $f$:
+
+$$
+\left|\mathbb E[f(X_T^{(n)})] - \mathbb E[f(X_T)]\right| = O(\Delta t^q).
+$$
+
+Weak order $q$ means the distribution of the approximation is close to the true distribution.
+
+<TheoremBox title="Convergence orders of Euler–Maruyama">
+Under Lipschitz and linear growth conditions:
+
+- **Strong order** $= \frac12$: $\mathbb E[\sup_k|X_{t_k}^{(n)}-X_{t_k}|^2]^{1/2} = O(\sqrt{\Delta t})$.
+- **Weak order** $= 1$: $|\mathbb E[f(X_T^{(n)})]-\mathbb E[f(X_T)]| = O(\Delta t)$ for $f\in C^4$.
+</TheoremBox>
+
+<GeometryBox title="Why strong order is only 1/2">
+An ODE solver (Euler method for $\dot x = f(x)$) has strong order 1: the error is $O(\Delta t)$ per step. For an SDE, the Brownian increments have magnitude $\sqrt{\Delta t}$, which is much larger than $\Delta t$ for small step sizes. The first-order Taylor expansion misses terms of order $(\Delta W)^2 = O(\Delta t)$ — these are precisely the Itô correction terms. Missing them limits the strong order to $\frac12$.
+</GeometryBox>
+
+<FinanceBox title="Which convergence matters in finance?">
+  **Strong convergence** is needed for:
+  - Path-dependent derivatives (barrier options, lookback options): payoff depends on the full path.
+  - Hedging strategies: the hedge ratio is computed along simulated paths.
+  - Variance reduction techniques (control variates, stratified sampling).
+
+  **Weak convergence** suffices for:
+  - European option pricing: payoff depends only on $X_T$.
+  - Greeks by finite difference (bump and re-price): requires only distributional accuracy.
+
+  Euler–Maruyama is weak order 1, making it adequate for European pricing but not for accurate path-dependent payoffs. Milstein (below) achieves strong order 1.
+</FinanceBox>
+
+---
+
+## 13.3 The Milstein scheme
+
+The Milstein scheme adds the leading Itô correction to Euler–Maruyama:
+
+$$
+X_{k+1}^{(n)} = X_k^{(n)} + b\Delta t + \sigma\sqrt{\Delta t}\,Z_{k+1}
++ \tfrac12\sigma\sigma'[(\sqrt{\Delta t}\,Z_{k+1})^2 - \Delta t],
+$$
+
+where $\sigma' = \partial_x\sigma$ evaluated at $X_k^{(n)}$.
+
+The last term is $\frac12\sigma\sigma'[(\Delta W)^2 - \Delta t]$. When averaged over many realizations, $\mathbb E[(\Delta W)^2 - \Delta t] = 0$, so the term adds no bias but reduces variance in the pathwise error.
+
+<TheoremBox title="Milstein strong convergence">
+Under Lipschitz conditions, the Milstein scheme achieves:
+- **Strong order 1**: $\mathbb E[\sup_k|X_{t_k}^{(n)} - X_{t_k}|^2]^{1/2} = O(\Delta t)$.
+- **Weak order 1** (same as Euler).
+</TheoremBox>
+
+**When does Milstein reduce to Euler?** When $\sigma' = 0$ (constant diffusion): $dX = b(X)\,dt + \sigma\,dW$. For additive noise, Milstein = Euler.
+
+**For GBM:** $\sigma(x) = \sigma x$, so $\sigma'(x) = \sigma$. The Milstein term is $\frac12\sigma^2 X_k[Z_{k+1}^2-1]\Delta t$. Milstein improves the pathwise accuracy from $O(\sqrt{\Delta t})$ to $O(\Delta t)$.
+
+---
+
+## 13.4 Higher-order schemes: the Runge–Kutta approach
+
+For smooth problems (non-degenerate diffusion, smooth coefficients), the **stochastic Runge–Kutta** (or Platen) methods extend Milstein to higher strong and weak orders. The simplest is the **order 1.5 strong Taylor scheme** which adds third-order Itô-Taylor terms.
+
+The general Itô-Taylor expansion truncated at level $m$ gives a scheme of strong order $m/2$. In practice, Milstein (order 1) and the 1.5-strong scheme are the most used.
+
+---
+
+## 13.5 Simulation bias in log-normal and CIR processes
+
+For GBM, the **exact scheme** (log-transformation) eliminates simulation bias entirely:
+
+$$
+S_{k+1} = S_k\exp\!\left[(r-\tfrac12\sigma^2)\Delta t + \sigma\sqrt{\Delta t}\,Z_{k+1}\right].
+$$
+
+This uses the exact solution $S_T = S_0 e^{(\mu-\sigma^2/2)T + \sigma W_T}$ evaluated at each step. Error: zero for the marginal distribution, $O(\Delta t)$ for path-dependent quantities (due to discrete monitoring).
+
+For CIR, no closed-form exact discretization exists. The **QE scheme** (Quadratic Exponential, Andersen 2007) approximates the non-central chi-squared distribution of $V_{t+\Delta t}$ given $V_t$ and achieves essentially zero bias for most practical parameters.
+
+**Euler with reflection** for CIR: $V_{k+1} = \max(V_k + \kappa(\theta-V_k)\Delta t + \xi\sqrt{V_k}\sqrt{\Delta t}\,Z_{k+1}, 0)$. Simple but introduces bias near zero.
+
+---
+
+## 13.6 Variance reduction techniques
+
+**Antithetic variates.** For each path $Z_1,\ldots,Z_n$, simulate also $-Z_1,\ldots,-Z_n$. Average the two estimates:
+
+$$
+\hat C = \frac12[f(X_T(Z)) + f(X_T(-Z))].
+$$
+
+Reduces variance by exploiting symmetry. Effective when $f$ is monotone (European calls, for example).
+
+**Control variates.** Choose a random variable $V$ with known mean $\mu_V$. Estimate $\mathbb E[f(X_T)]$ by:
+
+$$
+\hat C_{\rm cv} = \frac1N\sum_k[f(X_T^{(k)}) - \beta(V^{(k)} - \mu_V)],
+$$
+
+where $\beta = \text{Cov}(f,V)/\text{Var}(V)$ is the optimal coefficient. For a European call, use the delta-hedged portfolio as a control variate.
+
+**Quasi-Monte Carlo (QMC).** Replace pseudo-random $Z_k$ with quasi-random Sobol or Halton sequences. For smooth payoffs in low dimensions, QMC can achieve effective convergence rates of $O(1/N)$ vs $O(1/\sqrt{N})$ for Monte Carlo.
+
+---
+
+## 13.7 The discretization of path-dependent payoffs
+
+For a barrier option (pays $(S_T-K)^+$ if $S$ never hits $B$), the payoff depends on the full path. Euler–Maruyama discretization misses boundary crossings that occur between grid points — **discretization bias**.
+
+The Brownian bridge correction estimates the probability of crossing $B$ between $t_k$ and $t_{k+1}$:
+
+$$
+\mathbb P(\text{cross}\mid S_{t_k}=s_k, S_{t_{k+1}}=s_{k+1})
+= \exp\!\left(-\frac{2(s_k-B)(s_{k+1}-B)}{\sigma^2 s_k^2\Delta t}\right).
+$$
+
+This adds a correction to the Monte Carlo estimate without requiring finer time grids.
+
+---
+
+## 13.8 Multi-dimensional simulation
+
+For $dS^i = \mu_i S^i\,dt + \sigma_i S^i\,dW^i$ with $d[W^i,W^j] = \rho_{ij}\,dt$, simulate using Cholesky decomposition:
+
+1. Generate $n\times d$ matrix of i.i.d. $N(0,1)$ random variables $Z$.
+2. Compute Cholesky factor $L$ of $\rho$ ($\rho = LL^\top$).
+3. Set $\Delta\mathbf W = \sqrt{\Delta t}\, ZL^\top$.
+4. Apply Euler–Maruyama in each dimension using $\Delta W^i_k = (\Delta\mathbf W)^i_k$.
+
+The correlation structure is exactly reproduced in each step.
+
+---
+
+## 13.9 Problems
+
+<ProblemBox title="Problem 1: Euler bias for GBM">
+Show that for GBM $dS = \mu S\,dt + \sigma S\,dW$, the Euler–Maruyama scheme introduces a bias $\mathbb E[S_T^{\rm Euler}] \ne S_0 e^{\mu T}$. Compute the leading bias term in $\Delta t$.
+</ProblemBox>
+
+<ProblemBox title="Problem 2: Milstein for GBM">
+Write the Milstein scheme for GBM and show that after a log transformation, the scheme becomes the exact scheme $S_{k+1} = S_k e^{(\mu-\sigma^2/2)\Delta t + \sigma\Delta W_k}$. This is why GBM Milstein = exact.
+</ProblemBox>
+
+<ProblemBox title="Problem 3: Strong order lower bound">
+Explain intuitively why no scheme using only $W_{t_k}-W_{t_{k-1}}$ (and not the path within each interval) can achieve strong order better than $1$ for a general SDE with non-constant $\sigma$.
+</ProblemBox>
+
+---
+
+## 13.10 Selected solutions
+
+<SolutionBox title="Solution 1">
+For Euler: $S_{k+1} = S_k(1 + \mu\Delta t + \sigma\sqrt{\Delta t}Z_{k+1})$. Taking expectations: $\mathbb E[S_{k+1}] = \mathbb E[S_k](1+\mu\Delta t)$. Iterating: $\mathbb E[S_n^{\rm Euler}] = S_0(1+\mu\Delta t)^n$. Using $(1+x)^{1/x}\to e$:
+
+$$
+(1+\mu\Delta t)^n = (1+\mu/n)^n \to e^\mu,
+$$
+
+so $\mathbb E[S_T^{\rm Euler}]\to S_0 e^{\mu T}$ as $n\to\infty$. The leading bias is $(1+\mu\Delta t)^n - e^{\mu T} \approx S_0 e^{\mu T}\cdot\frac12\mu^2 T\Delta t = O(\Delta t)$. Euler is unbiased for the expected value but biased for higher moments.
+</SolutionBox>
+
+<SolutionBox title="Solution 2">
+For GBM: $b = \mu S$, $\sigma(S) = \sigma S$, $\sigma'(S) = \sigma$. The Milstein correction is $\frac12\sigma(S)\sigma'(S)[(\Delta W)^2-\Delta t] = \frac12\sigma^2 S_k[Z^2\Delta t-\Delta t]$.
+
+$$
+S_{k+1} = S_k + \mu S_k\Delta t + \sigma S_k\Delta W + \tfrac12\sigma^2 S_k(\Delta W^2-\Delta t)
+= S_k\left[1 + \mu\Delta t + \sigma\Delta W + \tfrac12\sigma^2(\Delta W^2-\Delta t)\right].
+$$
+
+Compare with the exact expansion $e^{(\mu-\sigma^2/2)\Delta t+\sigma\Delta W} = 1 + (\mu-\sigma^2/2)\Delta t + \sigma\Delta W + \frac12\sigma^2\Delta W^2 + O(\Delta t^{3/2})$. Both agree through $O(\Delta t)$, confirming Milstein achieves the exact law to this order.
+</SolutionBox>
+
+---
+
+## 13.11 What this chapter gives you
+
+| Method | Strong order | Weak order | When to use |
+|---|---|---|---|
+| Euler–Maruyama | $\frac12$ | $1$ | Simple, fast, additive noise |
+| Milstein | $1$ | $1$ | Multiplicative noise, path-dependent |
+| Exact GBM | $\infty$ | $\infty$ | GBM only |
+| QE scheme | $\approx\infty$ | $\approx\infty$ | CIR-type variance processes |
+| Stochastic RK | $\frac32$ strong | $2$ | High-accuracy, smooth payoffs |
+
+Variance reduction — antithetic variates, control variates, QMC — reduces the $O(1/\sqrt{N})$ Monte Carlo error efficiently.
+
+The final chapter studies the geometry of SDEs at a deeper level: the Stratonovich integral, connections to manifold-valued SDEs, and an introduction to rough paths.

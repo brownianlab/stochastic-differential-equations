@@ -1,0 +1,344 @@
+---
+id: chapter-05-explicit-models
+title: Chapter 5 — Explicitly Solvable Models
+sidebar_label: '5. Explicit SDE Models'
+---
+
+import GBMSimulator from '@site/src/components/GBMSimulator';
+import OUSimulator from '@site/src/components/OUSimulator';
+import {
+  MotivationBox,
+  GeometryBox,
+  TheoremBox,
+  ProofBox,
+  FinanceBox,
+  ProblemBox,
+  SolutionBox,
+  WarningBox,
+} from '@site/src/components/CourseBoxes';
+
+# Chapter 5 — Explicitly Solvable Models
+
+<MotivationBox title="Guiding question">
+  Which SDEs can be solved in closed form? What techniques reduce a nonlinear SDE to a linear one, and
+  what do the solutions reveal about mean-reversion, fat tails, and the geometry of financial dynamics?
+</MotivationBox>
+
+Most SDEs require numerical simulation. But a small, important family can be solved exactly using Itô's formula and algebraic tricks. These exact solutions are the calibration targets for more complex models and the benchmarks for numerical schemes.
+
+Three canonical models appear throughout quantitative finance:
+
+| Model | SDE | Used for |
+|---|---|---|
+| GBM | $dS = \mu S\,dt + \sigma S\,dW$ | Equity prices, Black–Scholes |
+| Ornstein–Uhlenbeck | $dX = \kappa(\theta-X)\,dt + \sigma\,dW$ | Interest rates, spreads, log-vol |
+| CIR | $dX = \kappa(\theta-X)\,dt + \sigma\sqrt{X}\,dW$ | Interest rates, variance |
+
+---
+
+## 5.1 Geometric Brownian Motion
+
+We derived in Chapter 3 that
+
+$$
+dS_t = \mu S_t\,dt + \sigma S_t\,dW_t,\qquad S_0 > 0,
+$$
+
+has the explicit solution
+
+$$
+S_t = S_0\exp\!\left[\left(\mu - \tfrac12\sigma^2\right)t + \sigma W_t\right].
+$$
+
+Let us now study this solution carefully.
+
+**Log-normal distribution.** Since $W_t\sim N(0,t)$, we have
+
+$$
+\log S_t \sim N\!\left(\log S_0 + (\mu-\tfrac12\sigma^2)t,\ \sigma^2 t\right).
+$$
+
+The price $S_t$ is log-normally distributed: $S_t = e^{\text{Normal}}$.
+
+**Mean and variance.**
+
+$$
+\mathbb E[S_t] = S_0 e^{\mu t},
+\qquad
+\text{Var}(S_t) = S_0^2 e^{2\mu t}(e^{\sigma^2 t}-1).
+$$
+
+**Median.**
+
+$$
+\text{Median}(S_t) = S_0 e^{(\mu-\sigma^2/2)t},
+$$
+
+which is less than the mean for all $\sigma > 0$. This is Jensen's inequality: $\mathbb E[e^X] \ge e^{\mathbb E[X]}$ for convex functions.
+
+<FinanceBox title="Volatility drag: why higher vol hurts median growth">
+  Imagine two assets, both with $\mu = 10\%$. Asset A has $\sigma = 10\%$, Asset B has $\sigma = 40\%$.
+
+  After $T=10$ years:
+  - $\mathbb E[S_T/S_0] = e^{0.1\times 10} \approx 2.72$ (same for both)
+  - Median A: $e^{(0.10-0.005)\times 10} = e^{0.95}\approx 2.59$
+  - Median B: $e^{(0.10-0.08)\times 10} = e^{0.20}\approx 1.22$
+
+  Asset B's expected value is the same, but more than half the scenarios produce less than 22% gain over 10 years. High volatility depresses the typical outcome even when the mean is unchanged. This is the practical meaning of the $-\sigma^2/2$ Itô correction.
+</FinanceBox>
+
+<GBMSimulator />
+
+**Return autocorrelation.** Log-returns $r_k = \log(S_{t_{k+1}}/S_{t_k})$ are i.i.d. $N((\mu-\sigma^2/2)\Delta t, \sigma^2\Delta t)$. No autocorrelation, by the independence of Brownian increments.
+
+---
+
+## 5.2 The Ornstein–Uhlenbeck process
+
+<TheoremBox title="OU process: explicit solution">
+The SDE
+
+$$
+dX_t = \kappa(\theta - X_t)\,dt + \sigma\,dW_t,
+\qquad X_0 = x_0,
+$$
+
+has the unique strong solution
+
+$$
+X_t = \theta + (x_0-\theta)e^{-\kappa t} + \sigma\int_0^t e^{-\kappa(t-s)}\,dW_s.
+$$
+</TheoremBox>
+
+<ProofBox title="Derivation via integrating factor">
+Define $Y_t = e^{\kappa t}(X_t - \theta)$. By Itô's product rule:
+
+$$
+dY_t = \kappa e^{\kappa t}(X_t-\theta)\,dt + e^{\kappa t}dX_t.
+$$
+
+Substituting $dX_t = \kappa(\theta-X_t)\,dt + \sigma\,dW_t$:
+
+$$
+dY_t = e^{\kappa t}[\kappa(X_t-\theta)\,dt + \kappa(\theta-X_t)\,dt + \sigma\,dW_t]
+= \sigma e^{\kappa t}\,dW_t.
+$$
+
+Integrating: $Y_t = Y_0 + \sigma\int_0^t e^{\kappa s}\,dW_s$.
+
+Converting back: $X_t - \theta = e^{-\kappa t}Y_t = (x_0-\theta)e^{-\kappa t} + \sigma\int_0^t e^{-\kappa(t-s)}\,dW_s$.
+</ProofBox>
+
+**Distribution.** Since the stochastic integral is a Gaussian with mean zero and variance $\sigma^2\int_0^t e^{-2\kappa(t-s)}\,ds = \frac{\sigma^2}{2\kappa}(1-e^{-2\kappa t})$:
+
+$$
+X_t \sim N\!\left(\theta + (x_0-\theta)e^{-\kappa t},\ \frac{\sigma^2}{2\kappa}(1-e^{-2\kappa t})\right).
+$$
+
+**Stationary distribution.** As $t\to\infty$, $X_t$ converges in distribution to
+
+$$
+X_\infty \sim N\!\left(\theta,\ \frac{\sigma^2}{2\kappa}\right).
+$$
+
+This is the unique stationary distribution of the OU process.
+
+<GeometryBox title="Mean reversion as exponential decay">
+The deterministic part of the solution is $(x_0-\theta)e^{-\kappa t}$: the displacement from the long-run mean $\theta$ decays exponentially at rate $\kappa$. The half-life of deviations is $\log 2/\kappa$. The stochastic part is the accumulated noise weighted by the exponential kernel $e^{-\kappa(t-s)}$ — older noise matters less. The OU process is a memory-fading random process: its past is discounted, not forgotten.
+</GeometryBox>
+
+<OUSimulator />
+
+**Autocovariance.** For $s\le t$:
+
+$$
+\text{Cov}(X_s,X_t) = \frac{\sigma^2}{2\kappa}e^{-\kappa(t-s)}(1-e^{-2\kappa s}).
+$$
+
+In the stationary regime ($s\to\infty$, $t-s = \tau$ fixed):
+
+$$
+\text{Cov}(X_{s+\tau},X_s) \approx \frac{\sigma^2}{2\kappa}e^{-\kappa\tau}.
+$$
+
+The autocovariance decays exponentially — a characteristic signature of mean reversion.
+
+<FinanceBox title="OU in finance: log-volatility, spreads, convenience yields">
+  The OU process models quantities that fluctuate around a long-run level:
+  - **Interest rates** (Vasicek model): short rate $r_t$ reverts to $\theta$
+  - **Log-volatility** in rough/stochastic vol models: $\log\sigma_t$ follows OU
+  - **Commodity convenience yield**: the net benefit of holding physical commodity
+  - **Credit spreads**: OU on spreads captures mean reversion after credit events
+
+  The key feature is that extreme values are self-correcting: high values have negative expected drift, low values have positive expected drift.
+</FinanceBox>
+
+---
+
+## 5.3 The CIR process
+
+The Cox–Ingersoll–Ross (CIR) process is:
+
+$$
+dX_t = \kappa(\theta - X_t)\,dt + \sigma\sqrt{X_t}\,dW_t,
+\qquad X_0 > 0.
+$$
+
+Unlike OU, the diffusion coefficient $\sigma\sqrt{X_t}$ vanishes at $X_t = 0$, which prevents the process from going negative (under the Feller condition).
+
+<TheoremBox title="Feller condition for positivity">
+If $2\kappa\theta \ge \sigma^2$ (the Feller condition), then $X_t > 0$ for all $t$, almost surely.
+
+If $2\kappa\theta < \sigma^2$, then $X_t$ touches zero and reflects, but the SDE remains well-posed.
+</TheoremBox>
+
+**Why the CIR diffusion coefficient matters.** In the OU process, noise is constant: $\sigma\,dW$. In CIR, noise scales as $\sigma\sqrt{X_t}\,dW$: when $X_t$ is large, noise is proportionally larger; when $X_t\to 0$, noise vanishes, and the drift $\kappa\theta > 0$ pushes the process back up.
+
+<GeometryBox title="The Feller boundary at zero">
+The boundary $\{X=0\}$ is a reflecting boundary for the CIR process when the Feller condition fails ($2\kappa\theta < \sigma^2$), or an unattainable boundary when it holds. The scaling $\sqrt{X}$ of the diffusion near zero creates a repulsion from the boundary that is precisely calibrated by the Feller condition: when the drift $\kappa\theta$ is strong enough relative to $\sigma^2$, the boundary is never reached.
+</GeometryBox>
+
+**Distribution.** The conditional distribution of $X_t$ given $X_0=x_0$ is a scaled non-central chi-squared:
+
+$$
+\frac{4\kappa}{\sigma^2(1-e^{-\kappa t})}\,X_t \sim \chi^2\!\left(\frac{4\kappa\theta}{\sigma^2},\ \lambda\right),
+$$
+
+where $\lambda = \frac{4\kappa x_0 e^{-\kappa t}}{\sigma^2(1-e^{-\kappa t})}$ is the non-centrality parameter.
+
+**Stationary distribution.** As $t\to\infty$, $X_t$ converges to a Gamma distribution:
+
+$$
+X_\infty \sim \text{Gamma}\!\left(\frac{2\kappa\theta}{\sigma^2},\ \frac{\sigma^2}{2\kappa}\right).
+$$
+
+Mean $= \theta$, variance $= \frac{\sigma^2\theta}{2\kappa}$.
+
+<FinanceBox title="CIR in finance: interest rates and variance">
+  **Vasicek/CIR interest rates:** The short rate $r_t$ in the CIR model stays positive (under the Feller condition), unlike Vasicek where negative rates are possible. CIR became a benchmark short-rate model for interest rate derivatives.
+
+  **Heston stochastic volatility:** The variance process $V_t$ in the Heston model satisfies $dV = \kappa(\theta-V)\,dt + \xi\sqrt{V}\,dW^v$. The Feller condition $2\kappa\theta > \xi^2$ ensures $V_t > 0$, keeping volatility well-defined.
+</FinanceBox>
+
+---
+
+## 5.4 Linear SDEs and the integrating factor method
+
+The technique that solved the OU process generalizes. A **linear SDE** has the form:
+
+$$
+dX_t = [a(t) + b(t)X_t]\,dt + [c(t) + d(t)X_t]\,dW_t.
+$$
+
+The solution uses the stochastic integrating factor $\Phi_t$ satisfying
+
+$$
+d\Phi_t = -b(t)\Phi_t\,dt - d(t)\Phi_t\,dW_t.
+$$
+
+By Itô's formula, this exponential process has the form
+
+$$
+\Phi_t = \exp\!\left(-\int_0^t b_s\,ds - \int_0^t d_s\,dW_s - \tfrac12\int_0^t d_s^2\,ds\right),
+$$
+
+and $d(\Phi_t X_t) = \Phi_t\,c(t)\,dW_t + \Phi_t\,a(t)\,dt$, which can then be integrated.
+
+---
+
+## 5.5 Summary table of explicit solutions
+
+| Model | SDE | Solution |
+|---|---|---|
+| GBM | $dS = \mu S\,dt + \sigma S\,dW$ | $S_t = S_0 e^{(\mu-\sigma^2/2)t+\sigma W_t}$ |
+| OU | $dX = \kappa(\theta-X)\,dt + \sigma\,dW$ | $X_t = \theta + (x_0-\theta)e^{-\kappa t} + \sigma\int_0^t e^{-\kappa(t-s)}dW_s$ |
+| Brownian bridge | $dX = \frac{\theta-X_t}{T-t}\,dt + dW$ | $X_t = x_0\frac{T-t}{T} + \theta\frac{t}{T} + \int_0^t\frac{T-t}{T-s}\,dW_s$ |
+| Affine diffusion | $dX = (a+bX)\,dt + (c+dX)\,dW$ | Via integrating factor + Itô |
+
+---
+
+## 5.6 Problems
+
+<ProblemBox title="Problem 1: OU autocovariance">
+For the stationary OU process, compute $\text{Corr}(X_t,X_{t+\tau})$ and show it equals $e^{-\kappa\tau}$.
+</ProblemBox>
+
+<ProblemBox title="Problem 2: OU variance">
+Verify from the explicit solution that $\text{Var}(X_t) = \frac{\sigma^2}{2\kappa}(1-e^{-2\kappa t})$.
+</ProblemBox>
+
+<ProblemBox title="Problem 3: Log-normal moments">
+For GBM, compute $\mathbb P(S_T > K)$ in terms of the normal CDF $\Phi$. (This is the $N(d_2)$ term in Black–Scholes.)
+</ProblemBox>
+
+<ProblemBox title="Problem 4: Feller condition interpretation">
+For CIR with parameters $\kappa=2$, $\theta=0.04$, $\sigma=0.1$, check whether the Feller condition holds. What happens to the variance of the stationary distribution as $\sigma$ increases toward the Feller boundary $\sigma^2 = 2\kappa\theta$?
+</ProblemBox>
+
+<ProblemBox title="Problem 5: Brownian bridge">
+A Brownian bridge $B_t$ satisfies $B_0 = 0$ and $B_T = 0$. Show that $B_t = W_t - \frac{t}{T}W_T$ has this property. Find the SDE satisfied by $B_t$, and verify it matches the Brownian bridge entry in the table above (with $\theta = 0$).
+</ProblemBox>
+
+---
+
+## 5.7 Selected solutions
+
+<SolutionBox title="Solution 1">
+In the stationary OU process, $X_s$ and $X_{s+\tau}$ are jointly Gaussian. Using the explicit solution:
+
+$$
+\text{Cov}(X_s, X_{s+\tau}) = e^{-\kappa\tau}\text{Var}(X_s) = \frac{\sigma^2}{2\kappa}e^{-\kappa\tau}.
+$$
+
+Since $\text{Var}(X_s) = \sigma^2/(2\kappa)$ in stationarity, $\text{Corr}(X_s,X_{s+\tau}) = e^{-\kappa\tau}$.
+</SolutionBox>
+
+<SolutionBox title="Solution 3">
+$S_T = S_0 e^{(\mu-\sigma^2/2)T + \sigma W_T}$. Then $S_T > K$ iff $\sigma W_T > \log(K/S_0) - (\mu-\sigma^2/2)T$, iff $W_T/\sqrt{T} > d_2$ where
+
+$$
+d_2 = \frac{\log(K/S_0) - (\mu-\sigma^2/2)T}{\sigma\sqrt{T}}.
+$$
+
+Wait, we want $S_T > K$:
+
+$$
+\mathbb P(S_T > K) = \mathbb P\!\left(\frac{W_T}{\sqrt{T}} > \frac{\log(K/S_0)-(\mu-\sigma^2/2)T}{\sigma\sqrt{T}}\right) = \Phi(-d_2) = \Phi(d_2'),
+$$
+
+where $d_2' = \frac{\log(S_0/K)+(\mu-\sigma^2/2)T}{\sigma\sqrt{T}}$. Under the risk-neutral measure ($\mu = r$), this is the $N(d_2)$ in Black–Scholes.
+</SolutionBox>
+
+<SolutionBox title="Solution 5">
+$B_t = W_t - \frac{t}{T}W_T$. Clearly $B_0 = 0$. To get the SDE, use Itô's formula for $B_t = W_t - \frac{t}{T}W_T$. Note $W_T = W_T$ is fixed at maturity $T$, not $W_t$. Write instead:
+
+$$
+B_t = \int_0^t\left(1 - \frac{t}{T}\right)dW_s - \int_0^t \frac{s}{T}\,\frac{dW_s}{1} + \cdots
+$$
+
+Actually, the SDE for the Brownian bridge is derived by noting $B_T = 0$ must hold, so the drift must absorb the Brownian path. Differentiating $B_t = W_t - \frac{t}{T}W_T$:
+
+$$
+dB_t = dW_t - \frac{1}{T}W_T\,dt.
+$$
+
+Now $W_T = B_T + \frac{T}{T}W_T = W_T$, and $\frac{W_T - B_t}{T-t}$ is the conditional expected value of what the remaining path must cover. The correct SDE form is:
+
+$$
+dB_t = -\frac{B_t}{T-t}\,dt + dW_t,
+$$
+
+with the drift pulling $B_t$ toward zero at rate $\frac{1}{T-t}$, which becomes infinite as $t\to T$, forcing the bridge to hit zero.
+</SolutionBox>
+
+---
+
+## 5.8 What this chapter gives you
+
+The three canonical models encode three fundamentally different behaviors:
+
+- **GBM**: multiplicative noise, log-normal distribution, no mean reversion, used for asset prices.
+- **OU**: additive noise, Gaussian distribution, exponential mean reversion, used for rates and spreads.
+- **CIR**: multiplicative noise scaled by $\sqrt{X}$, gamma stationary distribution, positivity preservation, used for variances and rates.
+
+Each is solved by the integrating factor method, which generalizes to all linear SDEs. The next chapter introduces the change-of-measure technique — Girsanov's theorem — which is the analytical foundation of risk-neutral pricing.

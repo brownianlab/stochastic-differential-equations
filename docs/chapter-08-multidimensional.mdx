@@ -1,0 +1,314 @@
+---
+id: chapter-08-multidimensional
+title: Chapter 8 — Multi-Dimensional Itô Calculus
+sidebar_label: '8. Multi-Dimensional Itô'
+---
+
+import CorrelatedBMDemo from '@site/src/components/CorrelatedBMDemo';
+import {
+  MotivationBox,
+  GeometryBox,
+  TheoremBox,
+  ProofBox,
+  FinanceBox,
+  ProblemBox,
+  SolutionBox,
+  WarningBox,
+} from '@site/src/components/CourseBoxes';
+
+# Chapter 8 — Multi-Dimensional Itô Calculus
+
+<MotivationBox title="Guiding question">
+  Most real financial systems involve many correlated assets. How does Itô calculus extend to
+  vector-valued processes, and what role does the correlation matrix play? When does correlation
+  create new drift terms?
+</MotivationBox>
+
+Every multi-asset model — baskets, spreads, rainbow options, cross-currency products — requires understanding how correlated Brownian motions interact. The key new object is the **cross-variation** $d[W^i, W^j] = \rho_{ij}\,dt$, which encodes how randomness in one dimension influences another.
+
+---
+
+## 8.1 Multi-dimensional Brownian motion
+
+A **$d$-dimensional standard Brownian motion** is a vector process $\mathbf W_t = (W_t^1,\ldots,W_t^d)$ where:
+
+1. Each $W_t^i$ is a one-dimensional Brownian motion.
+2. The components are **independent**: $W_t^i - W_s^i$ is independent of $W_t^j - W_s^j$ for $i\ne j$.
+3. $\mathbf W_0 = \mathbf 0$.
+
+For a **correlated** $d$-dimensional Brownian motion with correlation matrix $\rho = (\rho_{ij})_{i,j=1}^d$, write
+
+$$
+\mathbf W_t = \mathbf B_t\Sigma^{1/2},
+$$
+
+where $\mathbf B_t$ is a standard $d$-dimensional BM and $\Sigma^{1/2}$ is the Cholesky factor of the correlation matrix $\rho$ (so $(\Sigma^{1/2})(\Sigma^{1/2})^\top = \rho$).
+
+The defining properties of correlated BM are:
+
+$$
+\text{Cov}(W_t^i, W_t^j) = \rho_{ij}\,t,
+\qquad
+d[W^i,W^j]_t = \rho_{ij}\,dt.
+$$
+
+---
+
+## 8.2 Constructing correlated BM from independent BM
+
+Given independent BMs $Z^1,\ldots,Z^d$ and a correlation matrix $\rho$ with Cholesky decomposition $\rho = LL^\top$, set:
+
+$$
+W_t^i = \sum_j L_{ij}Z_t^j.
+$$
+
+Then
+
+$$
+d[W^i,W^j] = \sum_k L_{ik}\,dZ^k\,\sum_\ell L_{j\ell}\,dZ^\ell
+= \sum_k L_{ik}L_{jk}\,dt = (LL^\top)_{ij}\,dt = \rho_{ij}\,dt.
+$$
+
+<CorrelatedBMDemo />
+
+---
+
+## 8.3 The multi-dimensional Itô formula
+
+Let $\mathbf X_t = (X_t^1,\ldots,X_t^n)$ be a vector of Itô processes:
+
+$$
+dX_t^i = b_t^i\,dt + \sum_{j=1}^d \sigma_t^{ij}\,dW_t^j,
+\qquad i=1,\ldots,n.
+$$
+
+The quadratic (co-)variation is:
+
+$$
+d[X^i,X^j]_t = \sum_{k=1}^d\sigma_t^{ik}\sigma_t^{jk}\,dt = (\sigma\sigma^\top)_{ij}\,dt =: c_t^{ij}\,dt.
+$$
+
+<TheoremBox title="Multi-dimensional Itô formula">
+For $f\in C^{1,2}([0,T]\times\mathbb R^n)$,
+
+$$
+df(t,\mathbf X_t)
+= \partial_t f\,dt
++ \sum_i \partial_i f\,dX_t^i
++ \tfrac12\sum_{i,j}\partial_{ij}f\,d[X^i,X^j]_t.
+$$
+
+Expanded:
+
+$$
+df(t,\mathbf X_t)
+= \left[\partial_t f + \sum_i b_t^i\partial_i f + \tfrac12\sum_{i,j}c_t^{ij}\partial_{ij}f\right]dt
++ \sum_{i,k}\sigma_t^{ik}\partial_i f\,dW_t^k.
+$$
+</TheoremBox>
+
+<GeometryBox title="The Hessian and the diffusion matrix">
+The second-order term $\frac12\sum_{i,j}c^{ij}\partial_{ij}f$ is the contraction of the Hessian $\nabla^2 f$ with the diffusion covariance matrix $c = \sigma\sigma^\top$. In geometric terms, this is the trace of the product $c\cdot\nabla^2 f$. The Laplacian $\Delta f$ corresponds to $c = I$ (isotropic diffusion). Anisotropic diffusion — different volatilities and correlations — creates a non-isotropic "heat" operator.
+</GeometryBox>
+
+---
+
+## 8.4 The Itô multiplication table in $d$ dimensions
+
+The extended multiplication table for correlated BMs $(dW^i_t\,dW^j_t = \rho_{ij}\,dt)$:
+
+| | $dW^i$ | $dt$ |
+|---|---|---|
+| $dW^j$ | $\rho_{ij}\,dt$ | $0$ |
+| $dt$ | $0$ | $0$ |
+
+For uncorrelated components ($i\ne j$, $\rho_{ij}=0$): $dW^i\,dW^j = 0$. Cross terms vanish, and Itô's formula simplifies to the sum of independent one-dimensional formulas.
+
+---
+
+## 8.5 Key example: the log of a basket
+
+Let $S_t^1,\ldots,S_t^n$ follow correlated GBMs:
+
+$$
+dS_t^i = \mu_i S_t^i\,dt + \sigma_i S_t^i\,dW_t^i,
+\qquad d[W^i,W^j] = \rho_{ij}\,dt.
+$$
+
+The log of the basket $B_t = \sum_i w_i S_t^i$ (equal weights $w_i = 1/n$) satisfies:
+
+$$
+dB_t = \sum_i w_i\,dS_t^i
+= \left(\sum_i w_i\mu_i S_t^i\right)dt + \sum_i w_i\sigma_i S_t^i\,dW_t^i.
+$$
+
+The variance of $dB_t/B_t$ is (locally):
+
+$$
+\sigma_{\text{basket}}^2\,dt
+= \frac{1}{B_t^2}\sum_{i,j}w_i w_j\sigma_i\sigma_j\rho_{ij}S_t^i S_t^j\,dt.
+$$
+
+This formula shows that correlation reduces basket volatility: when $\rho_{ij} < 1$, the basket is less volatile than any single component.
+
+---
+
+## 8.6 Correlated Black–Scholes: two assets
+
+For two correlated assets $S^1, S^2$ with correlation $\rho$, the joint risk-neutral dynamics are:
+
+$$
+dS_t^1 = rS_t^1\,dt + \sigma_1 S_t^1\,dW_t^1,
+\qquad
+dS_t^2 = rS_t^2\,dt + \sigma_2 S_t^2(\rho\,dW_t^1 + \sqrt{1-\rho^2}\,dW_t^2),
+$$
+
+where $W^1,W^2$ are independent BMs under $\mathbb Q$. The correlation structure enters through the $\rho\,dW^1$ term in $S^2$'s dynamics.
+
+The covariance matrix of the log-returns over $[0,T]$ is:
+
+$$
+\Sigma = T\begin{pmatrix}\sigma_1^2 & \rho\sigma_1\sigma_2\\ \rho\sigma_1\sigma_2 & \sigma_2^2\end{pmatrix}.
+$$
+
+<FinanceBox title="Correlation in options: dispersion trading">
+  When correlation $\rho$ decreases, basket options become cheaper relative to individual options.
+  **Dispersion traders** sell basket variance and buy individual variance, profiting when realized
+  correlation is lower than implied correlation.
+
+  The key formula: $\sigma_{\text{basket}}^2 = \sum_{i,j}w_iw_j\rho_{ij}\sigma_i\sigma_j$. Lower
+  correlation $\to$ lower basket vol $\to$ basket options are cheaper. This is the mathematical
+  basis of the diversification benefit.
+</FinanceBox>
+
+---
+
+## 8.7 Itô's product rule in $d$ dimensions
+
+For two Itô processes $X$ and $Y$ with possibly non-zero cross-variation:
+
+$$
+d(XY) = X\,dY + Y\,dX + d[X,Y].
+$$
+
+For $X = S^1$, $Y = S^2$ with $d[S^1,S^2] = \rho\sigma_1\sigma_2 S^1 S^2\,dt$:
+
+$$
+d(S^1 S^2) = S^2\,dS^1 + S^1\,dS^2 + \rho\sigma_1\sigma_2 S^1 S^2\,dt.
+$$
+
+The extra term $\rho\sigma_1\sigma_2 S^1 S^2\,dt$ is the stochastic correction from the cross-variation. It modifies the drift of the product process.
+
+---
+
+## 8.8 Multi-dimensional Girsanov
+
+For a $d$-dimensional BM $\mathbf W$ under $\mathbb P$ and adapted process $\boldsymbol\theta = (\theta^1,\ldots,\theta^d)$, the stochastic exponential is:
+
+$$
+Z_T = \exp\!\left(\sum_i\int_0^T\theta_s^i\,dW_s^i - \tfrac12\sum_i\int_0^T(\theta_s^i)^2\,ds\right).
+$$
+
+Under $\mathbb Q$ with $dQ/dP = Z_T$:
+
+$$
+\widetilde W_t^i = W_t^i - \int_0^t\theta_s^i\,ds
+$$
+
+is a $d$-dimensional $\mathbb Q$-BM.
+
+In the multi-asset Black–Scholes model, the market prices of risk $\boldsymbol\theta = ((\mu_1-r)/\sigma_1, \ldots, (\mu_d-r)/\sigma_d)$ are used to transform $\mathbb P$ to $\mathbb Q$.
+
+---
+
+## 8.9 Worked example: spread option
+
+A spread option pays $(S_T^1 - S_T^2 - K)^+$. Under $\mathbb Q$:
+
+$$
+\log(S_T^i/S_0^i) \sim N\!\left((r-\tfrac12\sigma_i^2)T, \sigma_i^2 T\right),
+$$
+
+and the correlation is $\text{Corr}(\log S_T^1,\log S_T^2) = \rho$.
+
+No closed-form Black–Scholes formula exists for the spread. The **Margrabe formula** gives the price of an exchange option $(S_T^1 - S_T^2)^+$ with $K=0$:
+
+$$
+\text{Margrabe} = S_0^1 N(d_1) - S_0^2 N(d_2),
+$$
+
+$$
+d_1 = \frac{\log(S_0^1/S_0^2) + \frac12\sigma^2 T}{\sigma\sqrt{T}},
+\quad d_2 = d_1 - \sigma\sqrt{T},
+\quad \sigma^2 = \sigma_1^2 + \sigma_2^2 - 2\rho\sigma_1\sigma_2.
+$$
+
+The effective volatility $\sigma$ is the volatility of the ratio $S^1/S^2$.
+
+---
+
+## 8.10 Problems
+
+<ProblemBox title="Problem 1: Quadratic variation of a linear combination">
+Let $X_t = aW_t^1 + bW_t^2$ with $d[W^1,W^2] = \rho\,dt$. Find $[X]_t$.
+</ProblemBox>
+
+<ProblemBox title="Problem 2: Itô for $f(X,Y) = XY$">
+Let $dX = \sigma_X\,dW^1$ and $dY = \sigma_Y(\rho\,dW^1 + \sqrt{1-\rho^2}\,dW^2)$. Compute $d(XY)$ and identify the extra drift term.
+</ProblemBox>
+
+<ProblemBox title="Problem 3: Log of correlated GBM">
+For two correlated GBMs as above, compute $d(\log S^1/S^2)$. This is the dynamics of the log spread. What does it mean for $\rho=1$?
+</ProblemBox>
+
+<ProblemBox title="Problem 4: Margrabe check">
+Verify that the Margrabe formula satisfies put-call parity: $(S_T^1 - S_T^2)^+ - (S_T^2 - S_T^1)^+ = S_T^1 - S_T^2$.
+</ProblemBox>
+
+---
+
+## 8.11 Selected solutions
+
+<SolutionBox title="Solution 1">
+$[X]_t = a^2[W^1]_t + 2ab[W^1,W^2]_t + b^2[W^2]_t = a^2 t + 2ab\rho t + b^2 t = (a^2 + 2ab\rho + b^2)t$.
+</SolutionBox>
+
+<SolutionBox title="Solution 2">
+Using Itô's formula for the product:
+
+$$
+d(XY) = X\,dY + Y\,dX + d[X,Y],
+$$
+
+where $d[X,Y] = \sigma_X\sigma_Y\rho\,dt$ (only the $dW^1$ components contribute to cross-variation). Therefore:
+
+$$
+d(XY) = X\sigma_Y(\rho\,dW^1+\sqrt{1-\rho^2}\,dW^2) + Y\sigma_X\,dW^1 + \sigma_X\sigma_Y\rho\,dt.
+$$
+
+The extra drift $\sigma_X\sigma_Y\rho\,dt$ appears only because of correlation.
+</SolutionBox>
+
+<SolutionBox title="Solution 3">
+Let $R_t = S_t^1/S_t^2$. By Itô's quotient rule (which follows from the multi-dimensional formula):
+
+$$
+d\log R_t = d\log S_t^1 - d\log S_t^2 = (\mu_1-\mu_2)\,dt + (\sigma_1^2-\rho\sigma_1\sigma_2)\,dt + \sigma_1\,dW^1 - \sigma_2\rho\,dW^1 - \sigma_2\sqrt{1-\rho^2}\,dW^2.
+$$
+
+More cleanly: $d\log R = (\mu_1-\mu_2-\frac12\sigma_{\text{eff}}^2)\,dt + \sigma_{\text{eff}}\,d\hat W$ where $\sigma_{\text{eff}}^2 = \sigma_1^2-2\rho\sigma_1\sigma_2+\sigma_2^2$. For $\rho=1$ and $\sigma_1=\sigma_2$: $\sigma_{\text{eff}}=0$, and $\log R$ is deterministic — the ratio $S^1/S^2$ is non-random.
+</SolutionBox>
+
+---
+
+## 8.12 What this chapter gives you
+
+| Concept | Formula |
+|---|---|
+| Correlated BM | $d[W^i,W^j] = \rho_{ij}\,dt$ |
+| Multi-dimensional Itô | $df = \partial_t f\,dt + \sum\partial_i f\,dX^i + \frac12\sum\partial_{ij}f\,c^{ij}\,dt$ |
+| Product rule | $d(XY) = X\,dY + Y\,dX + d[X,Y]$ |
+| Basket vol | $\sigma_{\rm basket}^2 = \sum_{ij}w_iw_j\rho_{ij}\sigma_i\sigma_j$ |
+| Margrabe exchange | $(S^1 - S^2)^+$ priced by replacing $\sigma^2$ with $\sigma_1^2+\sigma_2^2-2\rho\sigma_1\sigma_2$ |
+
+The next chapter develops the infinitesimal generator, which packages all of Itô calculus into an operator acting on functions — the bridge to partial differential equations.

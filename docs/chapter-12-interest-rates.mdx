@@ -1,0 +1,263 @@
+---
+id: chapter-12-interest-rates
+title: Chapter 12 — Interest Rate Models
+sidebar_label: '12. Interest Rate Models'
+---
+
+import VasicekDemo from '@site/src/components/VasicekDemo';
+import OUSimulator from '@site/src/components/OUSimulator';
+import {
+  MotivationBox,
+  GeometryBox,
+  TheoremBox,
+  ProofBox,
+  FinanceBox,
+  ProblemBox,
+  SolutionBox,
+  WarningBox,
+} from '@site/src/components/CourseBoxes';
+
+# Chapter 12 — Interest Rate Models
+
+<MotivationBox title="Guiding question">
+  Modeling equity prices requires one SDE. Modeling the yield curve requires modeling infinitely many
+  correlated rates simultaneously. How do we build self-consistent models for the entire term structure
+  that remain arbitrage-free?
+</MotivationBox>
+
+Interest rate modeling is fundamentally different from equity modeling: the "underlying" is not one number but a curve — the function $T\mapsto r(t,T)$ mapping maturity to yield. Every point on this curve is a derivative of the short rate $r_t = r(t,t)$, and all must move consistently under one probability measure.
+
+---
+
+## 12.1 Term structure fundamentals
+
+A **zero-coupon bond** $P(t,T)$ pays $\$1$ at time $T$. Its price at $t$ is:
+
+$$
+P(t,T) = \mathbb E^{\mathbb Q}\!\left[\exp\!\left(-\int_t^T r_s\,ds\right)\Bigg| \mathcal F_t\right].
+$$
+
+The continuously compounded **yield** $y(t,T)$ and **forward rate** $f(t,T)$ are:
+
+$$
+y(t,T) = -\frac{\log P(t,T)}{T-t},
+\qquad
+f(t,T) = -\partial_T\log P(t,T).
+$$
+
+The **short rate** is $r_t = \lim_{T\to t}f(t,T) = f(t,t)$.
+
+The entire yield curve is determined by the bond prices $\{P(t,T): T\ge t\}$.
+
+---
+
+## 12.2 The Vasicek model
+
+<TheoremBox title="Vasicek short-rate model">
+The Vasicek model assumes:
+
+$$
+dr_t = \kappa(\theta - r_t)\,dt + \sigma\,dW_t.
+$$
+
+The zero-coupon bond price is $P(t,T) = A(\tau)e^{-B(\tau)r_t}$ where $\tau = T-t$:
+
+$$
+B(\tau) = \frac{1-e^{-\kappa\tau}}{\kappa},
+\quad
+\log A(\tau) = \left(\theta - \frac{\sigma^2}{2\kappa^2}\right)(B(\tau)-\tau) - \frac{\sigma^2 B(\tau)^2}{4\kappa}.
+$$
+</TheoremBox>
+
+<ProofBox title="Derivation via Feynman–Kac">
+By Feynman–Kac, $P(t,r) = A(\tau)e^{-B(\tau)r}$ must solve the PDE:
+
+$$
+\partial_\tau P = \kappa(\theta-r)\partial_r P + \tfrac12\sigma^2\partial_{rr}P - rP.
+$$
+
+Substituting the affine form:
+
+$$
+\dot A e^{-Br} - A\dot B r e^{-Br}
+= \kappa(\theta-r)(-AB)e^{-Br} + \tfrac12\sigma^2 AB^2 e^{-Br} - rAe^{-Br}.
+$$
+
+Dividing by $Ae^{-Br}$ and collecting $r^0$ and $r^1$ terms:
+
+- $r^0$: $\dot A/A = -\kappa\theta B + \frac12\sigma^2 B^2$
+- $r^1$: $-\dot B = -1 + \kappa B$
+
+The $r^1$ equation gives the ODE $\dot B = 1 - \kappa B$ with $B(0) = 0$, solved by $B(\tau) = (1-e^{-\kappa\tau})/\kappa$. The $r^0$ equation gives $\log A$ by integration.
+</ProofBox>
+
+<VasicekDemo />
+
+**Properties:**
+- Exact Gaussian distribution: $r_t\mid r_0\sim N(\theta + (r_0-\theta)e^{-\kappa t}, \frac{\sigma^2}{2\kappa}(1-e^{-2\kappa t}))$
+- Negative rates possible (limitation for low-rate environments)
+- Yield curve can be normal, flat, or inverted depending on $r_0$ vs $\theta$
+
+---
+
+## 12.3 The CIR model
+
+To avoid negative rates, Cox–Ingersoll–Ross proposed:
+
+$$
+dr_t = \kappa(\theta-r_t)\,dt + \sigma\sqrt{r_t}\,dW_t.
+$$
+
+<TheoremBox title="CIR bond price">
+The bond price has the same affine form $P(t,T) = A(\tau)e^{-B(\tau)r_t}$, but with:
+
+$$
+B(\tau) = \frac{2(e^{\gamma\tau}-1)}{(\gamma+\kappa)(e^{\gamma\tau}-1)+2\gamma},
+$$
+
+$$
+A(\tau) = \left(\frac{2\gamma e^{(\kappa+\gamma)\tau/2}}{(\gamma+\kappa)(e^{\gamma\tau}-1)+2\gamma}\right)^{2\kappa\theta/\sigma^2},
+$$
+
+where $\gamma = \sqrt{\kappa^2+2\sigma^2}$.
+</TheoremBox>
+
+The key difference from Vasicek: the yields in CIR are always positive (when $r_0 > 0$ and the Feller condition holds), and the vol of the short rate scales with $\sqrt{r}$ rather than being constant.
+
+---
+
+## 12.4 Affine term structure models
+
+Both Vasicek and CIR are special cases of **affine term structure models (ATSMs)**. An ATSM assumes the state vector $\mathbf X_t$ follows an affine diffusion:
+
+$$
+d\mathbf X_t = (\boldsymbol\kappa\boldsymbol\theta - K\mathbf X_t)\,dt + \Sigma(\mathbf X_t)\,d\mathbf W_t,
+$$
+
+with the short rate $r_t = \delta_0 + \boldsymbol\delta\cdot\mathbf X_t$ (affine in the state).
+
+**Key result:** bond prices are exponential-affine: $P(t,T) = e^{A(\tau)+\mathbf B(\tau)\cdot\mathbf X_t}$, where $(A,\mathbf B)$ solve a system of Riccati ODEs.
+
+The $A_n(m)$ classification (Dai–Singleton) organizes ATSMs by the number of state variables $n$ and the number of correlated factors driving volatility $m$.
+
+---
+
+## 12.5 The HJM framework
+
+The Heath–Jarrow–Morton framework models the entire forward rate curve:
+
+$$
+df(t,T) = \mu(t,T)\,dt + \boldsymbol\sigma(t,T)\cdot d\mathbf W_t.
+$$
+
+Here $f(t,T)$ is the instantaneous forward rate for time $T$, observed at time $t$.
+
+<TheoremBox title="HJM drift condition (no-arbitrage)">
+Under the risk-neutral measure $\mathbb Q$, the drift of $f(t,T)$ is completely determined by its volatility:
+
+$$
+\mu^{\mathbb Q}(t,T) = \boldsymbol\sigma(t,T)\cdot\int_t^T\boldsymbol\sigma(t,s)\,ds.
+$$
+
+This is the HJM drift restriction.
+</TheoremBox>
+
+<ProofBox title="Proof sketch">
+The bond price is $P(t,T) = \exp(-\int_t^T f(t,s)\,ds)$. For $\tilde P(t,T) = e^{-rt}P(t,T)$ to be a $\mathbb Q$-martingale, Itô's formula for $P(t,T)$ (using Itô's formula for the exponential of a stochastic integral) forces the drift-volatility relationship above.
+</ProofBox>
+
+<GeometryBox title="HJM as geometry of forward rates">
+The HJM condition says: in a no-arbitrage model, you cannot freely specify both the drift and the volatility of forward rates. Once you commit to a volatility structure $\sigma(t,T)$, the drift is determined. The entire arbitrage-free family of term structure models is parameterized by the volatility structure alone.
+
+Vasicek is HJM with $\sigma(t,T) = \sigma e^{-\kappa(T-t)}$ (exponentially decaying vols). CIR is HJM with state-dependent vol. The HJM framework unifies all these as special cases.
+</GeometryBox>
+
+---
+
+## 12.6 The LIBOR market model
+
+For cap/floor pricing, the natural objects are **LIBOR forward rates** $L(t,T_i,T_{i+1})$ for a tenor grid $T_0 < T_1 < \cdots < T_n$.
+
+In the Brace–Gatarek–Musiela (BGM)/LIBOR market model, each LIBOR rate follows a lognormal process under its own forward measure (the $T_{i+1}$-forward measure):
+
+$$
+dL_i(t) = \mu_i(t)\,dt + \sigma_i(t)\,L_i(t)\,d\tilde W_t^{T_{i+1}},
+$$
+
+where the drift $\mu_i$ (under a common measure) is determined by the terminal correlation structure and the tenor basis.
+
+This model is consistent with Black's formula for caps and floors, making calibration straightforward.
+
+---
+
+## 12.7 Bond option pricing in Vasicek
+
+A European call on $P(t,T_2)$ with strike $K$ and maturity $T_1 < T_2$:
+
+$$
+\text{price} = P(0,T_2)N(\hat d_1) - KP(0,T_1)N(\hat d_2),
+$$
+
+$$
+\hat d_{1,2} = \frac{\log(P(0,T_2)/KP(0,T_1))}{\hat\sigma\sqrt{T_1}} \pm \frac{\hat\sigma\sqrt{T_1}}{2},
+$$
+
+$$
+\hat\sigma^2 = \frac{\sigma^2(1-e^{-\kappa T_1})^2(1-e^{-2\kappa(T_2-T_1)})}{2\kappa^3 T_1}.
+$$
+
+This is a Black-type formula for bond options, with $\hat\sigma$ being the effective vol of the forward bond price over $[0,T_1]$.
+
+<FinanceBox title="Negative rates and extensions">
+  The Vasicek model allows negative rates, which was academic curiosity until 2014 when European
+  central banks introduced negative policy rates. Gaussian models (Vasicek, Hull-White) became
+  acceptable. The normal SABR model and shifted lognormal models are now standard for low-rate
+  environments.
+
+  For a Vasicek model extended to fit the initial term structure (Hull–White extension):
+  $dr = (\theta(t) - \kappa r)\,dt + \sigma\,dW$, where $\theta(t)$ is calibrated to match $P(0,T)$
+  for all $T$. This makes the model exact for today's curve while retaining mean-reverting dynamics.
+</FinanceBox>
+
+---
+
+## 12.8 Problems
+
+<ProblemBox title="Problem 1: Vasicek yield">
+Show that the Vasicek yield $y(\tau) = -\log P(\tau)/\tau$ satisfies $y(\infty) = \theta - \sigma^2/(2\kappa^2)$. Interpret: the long-run yield is the long-run rate minus a convexity adjustment.
+</ProblemBox>
+
+<ProblemBox title="Problem 2: HJM from Vasicek">
+Write the Vasicek forward rate as $f(t,T) = -\partial_T\log P(t,T)$ using the affine formula, and show it follows an HJM model with $\sigma(t,T) = \sigma e^{-\kappa(T-t)}$.
+</ProblemBox>
+
+<ProblemBox title="Problem 3: Affine check">
+For the two-factor Vasicek model with $\mathbf X = (r, v)$ where $dr = \kappa_r(\bar r - r)\,dt + \sigma_r\,dW^r$ and $dv = \kappa_v(\bar v - v)\,dt + \sigma_v\,dW^v$, and $r_t = r_t + v_t$, show that bond prices are still exponential-affine and write the ODEs for $A, B_r, B_v$.
+</ProblemBox>
+
+---
+
+## 12.9 Selected solutions
+
+<SolutionBox title="Solution 1">
+As $\tau\to\infty$: $B(\tau)/\tau = (1-e^{-\kappa\tau})/(\kappa\tau)\to 0$. The log-$A$ term gives:
+
+$$
+\frac{\log A(\tau)}{\tau} \to \left(\theta-\frac{\sigma^2}{2\kappa^2}\right)\lim_{\tau\to\infty}\frac{B(\tau)-\tau}{\tau} - \frac{\sigma^2}{4\kappa}\lim_{\tau\to\infty}\frac{B(\tau)^2}{\tau}.
+$$
+
+The second term vanishes since $B(\tau)^2/\tau\to 0$. The first term uses $B(\tau)-\tau\to -1/\kappa$... Working through the full limit gives $y(\infty) = \theta - \sigma^2/(2\kappa^2)$. The convexity adjustment $\sigma^2/(2\kappa^2)$ arises from Jensen's inequality applied to the exponential discounting.
+</SolutionBox>
+
+---
+
+## 12.10 What this chapter gives you
+
+| Model | SDE | Bond price | Rates |
+|---|---|---|---|
+| Vasicek | OU for $r$ | $Ae^{-Br}$, explicit | Can be negative |
+| CIR | OU with $\sqrt{r}$ vol | $Ae^{-Br}$, explicit | Always positive |
+| HJM | Forward rate $f(t,T)$ | Implied | No-arbitrage drift condition |
+| LMM | LIBOR rates lognormal | Implied | Black's formula for caps |
+
+The next chapter leaves the world of analytical solutions and develops numerical methods for SDEs that cannot be solved in closed form.

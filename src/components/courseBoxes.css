@@ -1,0 +1,17 @@
+.course-box {
+  border-radius: 18px;
+  padding: 1rem 1.1rem;
+  margin: 1.25rem 0;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+.course-box__title { font-weight: 800; letter-spacing: .01em; margin-bottom: .45rem; }
+.course-box__body > :last-child { margin-bottom: 0; }
+.course-box--motivation { background: linear-gradient(135deg,#eff6ff,#f5f3ff); border-left: 6px solid #2563eb; }
+.course-box--geometry { background: linear-gradient(135deg,#ecfeff,#f0fdf4); border-left: 6px solid #0891b2; }
+.course-box--theorem { background: linear-gradient(135deg,#fff7ed,#fffbeb); border-left: 6px solid #f97316; }
+.course-box--proof { background: #ffffff; border-left: 6px solid #64748b; }
+.course-box--finance { background: linear-gradient(135deg,#f0fdf4,#ecfdf5); border-left: 6px solid #16a34a; }
+.course-box--problem { background: linear-gradient(135deg,#fdf4ff,#faf5ff); border-left: 6px solid #a855f7; }
+.course-box--solution { background: linear-gradient(135deg,#f8fafc,#eef2ff); border-left: 6px solid #4f46e5; }
+.course-box--warning { background: linear-gradient(135deg,#fff1f2,#fff7ed); border-left: 6px solid #e11d48; }

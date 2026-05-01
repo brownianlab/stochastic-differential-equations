@@ -1,0 +1,292 @@
+---
+id: chapter-07-black-scholes
+title: Chapter 7 — Black–Scholes from First Principles
+sidebar_label: '7. Black–Scholes'
+---
+
+import BlackScholesPricing from '@site/src/components/BlackScholesPricing';
+import GBMSimulator from '@site/src/components/GBMSimulator';
+import {
+  MotivationBox,
+  GeometryBox,
+  TheoremBox,
+  ProofBox,
+  FinanceBox,
+  ProblemBox,
+  SolutionBox,
+  WarningBox,
+} from '@site/src/components/CourseBoxes';
+
+# Chapter 7 — Black–Scholes from First Principles
+
+<MotivationBox title="Guiding question">
+  Given a stock following $dS = \mu S\,dt + \sigma S\,dW$, what is the fair price of an option on $S$?
+  The answer should depend only on observable quantities, not on $\mu$ — the investor's subjective view
+  of expected return. How can this be, and how do we derive the formula rigorously?
+</MotivationBox>
+
+Black–Scholes is the synthesis of everything built in Chapters 1–6. It requires:
+- GBM as the stock model (Chapter 3, 5)
+- Itô's formula to compute option price dynamics (Chapter 3)
+- Self-financing portfolio and replication (new concept here)
+- The PDE or risk-neutral pricing formula (Chapters 6, 10)
+
+---
+
+## 7.1 The model setup
+
+**Stock:** $dS_t = \mu S_t\,dt + \sigma S_t\,dW_t^{\mathbb P}$, with $S_0 > 0$, $\sigma > 0$.
+
+**Bond:** $dB_t = r B_t\,dt$ (risk-free savings account), so $B_t = B_0 e^{rt}$.
+
+**Option:** a European call with payoff $g(S_T) = (S_T - K)^+$ at time $T$.
+
+**Objective:** find the replicating portfolio and its cost at time $0$.
+
+---
+
+## 7.2 The self-financing condition
+
+A portfolio $(\Delta_t, \psi_t)$ consists of $\Delta_t$ shares of stock and $\psi_t$ units of bond. Its value is:
+
+$$
+V_t = \Delta_t S_t + \psi_t B_t.
+$$
+
+The portfolio is **self-financing** if all changes in value come from capital gains — no external cash flows:
+
+$$
+dV_t = \Delta_t\,dS_t + \psi_t\,dB_t.
+$$
+
+In words: the change in wealth equals the gain from the stock position plus the gain from the bond position, with no injections or withdrawals.
+
+Using $dS_t = \mu S_t\,dt + \sigma S_t\,dW_t$ and $dB_t = rB_t\,dt$:
+
+$$
+dV_t = \Delta_t(\mu S_t\,dt + \sigma S_t\,dW_t) + \psi_t rB_t\,dt
+= (\mu\Delta_t S_t + r\psi_t B_t)\,dt + \sigma\Delta_t S_t\,dW_t.
+$$
+
+---
+
+## 7.3 The replication argument
+
+Assume the option price has the form $V_t = f(t,S_t)$ for some smooth function $f$. Apply Itô's formula:
+
+$$
+dV_t = df(t,S_t)
+= \left[\partial_t f + \mu S_t\partial_S f + \tfrac12\sigma^2 S_t^2\partial_{SS}f\right]dt
++ \sigma S_t\partial_S f\,dW_t.
+$$
+
+Matching the $dW_t$ term with the self-financing condition:
+
+$$
+\sigma S_t\partial_S f = \sigma\Delta_t S_t
+\implies
+\boxed{\Delta_t = \partial_S f(t,S_t).}
+$$
+
+The hedge ratio is $\Delta = \partial_S f$, the **delta** of the option.
+
+Matching the $dt$ terms:
+
+$$
+\partial_t f + \mu S\partial_S f + \tfrac12\sigma^2 S^2\partial_{SS}f
+= \mu\Delta S + r\psi B.
+$$
+
+Substituting $\Delta = \partial_S f$ and $V = f = \Delta S + \psi B$, so $\psi B = f - \Delta S = f - S\partial_S f$:
+
+$$
+\partial_t f + \mu S\partial_S f + \tfrac12\sigma^2 S^2\partial_{SS}f
+= \mu S\partial_S f + r(f - S\partial_S f).
+$$
+
+The $\mu$ terms cancel:
+
+$$
+\boxed{\partial_t f + rS\,\partial_S f + \tfrac12\sigma^2 S^2\,\partial_{SS}f - rf = 0.}
+$$
+
+This is the **Black–Scholes PDE**.
+
+<GeometryBox title="Why $\mu$ disappears">
+The hedge $\Delta = \partial_S f$ exactly cancels the stochastic term. The remaining PDE has no $\mu$ — the investor's subjective expected return is irrelevant. This is the mathematical statement of no-arbitrage: if two investors with different $\mu$ beliefs both delta-hedge, they hold the same portfolio and must agree on the option price.
+
+Economically, delta-hedging eliminates the risk of the position. The hedged portfolio earns the risk-free rate $r$, regardless of $\mu$.
+</GeometryBox>
+
+---
+
+## 7.4 Boundary conditions and the solution
+
+The PDE is solved on $(t,S)\in[0,T)\times(0,\infty)$ with terminal condition
+
+$$
+f(T,S) = (S-K)^+.
+$$
+
+For $S\to 0$: $f\to 0$. For $S\to\infty$: $f\sim S - Ke^{-r(T-t)}$ (deep in-the-money).
+
+The change of variables $x = \log S$ transforms the PDE to the heat equation. The solution is:
+
+<TheoremBox title="Black–Scholes formula">
+The price of a European call option is
+
+$$
+C(t,S) = S\,N(d_1) - Ke^{-r(T-t)}\,N(d_2),
+$$
+
+where
+
+$$
+d_1 = \frac{\log(S/K) + (r+\sigma^2/2)(T-t)}{\sigma\sqrt{T-t}},
+\qquad
+d_2 = d_1 - \sigma\sqrt{T-t},
+$$
+
+and $N(\cdot)$ is the standard normal CDF.
+</TheoremBox>
+
+<ProofBox title="Derivation via heat equation">
+Let $\tau = T-t$ (time to maturity) and $x = \log(S/K) + (r-\sigma^2/2)\tau$. The Black–Scholes PDE becomes the heat equation $\partial_\tau u = \frac{\sigma^2}{2}\partial_{xx}u$ with initial condition $u(0,x) = K(e^x - 1)^+$.
+
+The solution is given by convolution with the Gaussian kernel:
+
+$$
+u(\tau,x) = \frac{1}{\sigma\sqrt{2\pi\tau}}\int_{-\infty}^\infty K(e^y-1)^+ e^{-(x-y)^2/(2\sigma^2\tau)}\,dy.
+$$
+
+Evaluating this integral (split at $y=0$) yields the Black–Scholes formula.
+</ProofBox>
+
+<BlackScholesPricing />
+
+---
+
+## 7.5 The Greeks
+
+The **Greeks** are sensitivities of the option price to model parameters:
+
+$$
+\Delta = \partial_S C = N(d_1),
+\qquad
+\Gamma = \partial_{SS} C = \frac{N'(d_1)}{S\sigma\sqrt{\tau}},
+$$
+
+$$
+\Theta = \partial_t C = -\frac{SN'(d_1)\sigma}{2\sqrt{\tau}} - rKe^{-r\tau}N(d_2),
+\qquad
+\mathcal V = \partial_\sigma C = SN'(d_1)\sqrt{\tau}.
+$$
+
+The Black–Scholes PDE can be written compactly as:
+
+$$
+\Theta + rS\Delta + \tfrac12\sigma^2 S^2\Gamma = rC.
+$$
+
+This says: time decay plus drift income plus convexity income equals the risk-free return on the option value.
+
+<GeometryBox title="Gamma is the curvature cost">
+$\Gamma = \partial_{SS}C > 0$ means the option is a convex function of $S$. By Itô's formula, $(dS)^2 = \sigma^2 S^2\,dt$ generates a contribution $\frac12\Gamma\sigma^2 S^2\,dt$ to the instantaneous P&L of the delta-hedged portfolio. This convexity income is what the option holder "earns" by gamma scalping — rebalancing the delta hedge as $S$ moves. It is exactly balanced by time decay $\Theta$.
+</GeometryBox>
+
+---
+
+## 7.6 Put–call parity
+
+By no-arbitrage, the put price $P(t,S) = Ke^{-r\tau}N(-d_2) - SN(-d_1)$ satisfies:
+
+$$
+C - P = S - Ke^{-r\tau}.
+$$
+
+This is **put–call parity** and requires no model assumptions — only the absence of arbitrage and the definitions of the payoffs.
+
+---
+
+## 7.7 The risk-neutral derivation
+
+Alternatively, by Chapter 6, under $\mathbb Q$:
+
+$$
+dS = rS\,dt + \sigma S\,d\widetilde W,
+\qquad
+S_T = S_t\exp\!\left[(r-\tfrac12\sigma^2)(T-t) + \sigma(\widetilde W_T - \widetilde W_t)\right].
+$$
+
+The call price is:
+
+$$
+C(t,S) = e^{-r\tau}\mathbb E^{\mathbb Q}\!\left[(S_T-K)^+\mid S_t = S\right].
+$$
+
+Since $\log(S_T/S)\sim N((r-\sigma^2/2)\tau, \sigma^2\tau)$ under $\mathbb Q$, the expectation evaluates to the Black–Scholes formula. This derivation makes explicit that $C$ is an expectation — it can be computed by Monte Carlo simulation.
+
+---
+
+## 7.8 Model assumptions and their violations
+
+| Assumption | Violation | Effect on pricing |
+|---|---|---|
+| Constant $\sigma$ | Implied vol varies by strike | Volatility smile/skew |
+| Continuous trading | Jumps in price | Jump premium |
+| No transaction costs | Friction | Bid-ask spread in delta |
+| Normal log-returns | Fat tails | Out-of-the-money option mispricing |
+| Constant $r$ | Stochastic rates | For long-dated options |
+
+---
+
+## 7.9 Problems
+
+<ProblemBox title="Problem 1: PDE verification">
+Verify directly that $C(t,S) = SN(d_1) - Ke^{-r\tau}N(d_2)$ satisfies the Black–Scholes PDE. (Compute $\partial_\tau C$, $\partial_S C$, $\partial_{SS}C$ and substitute.)
+</ProblemBox>
+
+<ProblemBox title="Problem 2: Deep in-the-money limit">
+Show that $\lim_{S\to\infty} C(t,S) - (S - Ke^{-r\tau}) = 0$. Interpret geometrically.
+</ProblemBox>
+
+<ProblemBox title="Problem 3: At-the-money approximation">
+For $S = K$ and small $\tau$, show that $C \approx S\sigma\sqrt{\tau/2\pi}$. This is the leading-order at-the-money option price.
+</ProblemBox>
+
+<ProblemBox title="Problem 4: Implied volatility">
+Given an observed call price $C^{\text{obs}}$, define the implied volatility $\sigma_{\text{imp}}$ as the value of $\sigma$ in the Black–Scholes formula that matches $C^{\text{obs}}$. Show that $C$ is strictly increasing in $\sigma$, so $\sigma_{\text{imp}}$ is uniquely defined.
+</ProblemBox>
+
+---
+
+## 7.10 Selected solutions
+
+<SolutionBox title="Solution 3">
+At $S = K$, $d_1 = (r+\sigma^2/2)\sqrt{\tau}/\sigma$ and $d_2 = (r-\sigma^2/2)\sqrt{\tau}/\sigma$. For small $\tau$, $d_1\approx d_2\approx 0$ and $N(0) = 1/2$. Using the approximation $N(d)-1/2\approx d\cdot N'(0) = d/\sqrt{2\pi}$:
+
+$$
+C \approx S(N(d_1)-N(d_2)) = S\cdot\frac{d_1-d_2}{\sqrt{2\pi}} = S\cdot\frac{\sigma\sqrt{\tau}}{\sqrt{2\pi}}.
+$$
+
+Simplifying: $C \approx S\sigma\sqrt{\tau/(2\pi)}$. The leading-order ATM call price is linear in $\sigma$ and grows as $\sqrt{\tau}$ — a direct consequence of Brownian scaling.
+</SolutionBox>
+
+<SolutionBox title="Solution 4">
+The vega $\mathcal V = \partial_\sigma C = SN'(d_1)\sqrt{\tau} > 0$ for all $S,K,\tau,r,\sigma > 0$. Since $\mathcal V > 0$, $C$ is strictly increasing in $\sigma$. Therefore for any $C^{\text{obs}}$ in $(C(\sigma=0^+), C(\sigma=\infty))$, there is exactly one $\sigma_{\text{imp}}$ with $C(\sigma_{\text{imp}}) = C^{\text{obs}}$.
+</SolutionBox>
+
+---
+
+## 7.11 What this chapter gives you
+
+| Result | Formula |
+|---|---|
+| Black–Scholes PDE | $\partial_t f + rS\partial_S f + \frac12\sigma^2 S^2\partial_{SS}f = rf$ |
+| Hedge ratio (delta) | $\Delta = \partial_S C = N(d_1)$ |
+| Call price | $C = SN(d_1) - Ke^{-r\tau}N(d_2)$ |
+| Put–call parity | $C - P = S - Ke^{-r\tau}$ |
+| Risk-neutral pricing | $C = e^{-r\tau}\mathbb E^{\mathbb Q}[(S_T-K)^+]$ |
+| PDE $\leftrightarrow$ expectation | Black–Scholes formula = Feynman–Kac solution |
+
+The next chapters extend these ideas: Chapter 8 handles multiple assets, Chapter 10 establishes Feynman–Kac in full generality.
