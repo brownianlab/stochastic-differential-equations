@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunksde_web_book=globalThis.webpackChunksde_web_book||[]).push([[1947],{1947(e,b,s){s.d(b,{createWardleyServices:()=>a.J});var a=s(2295);s(2519)}}]);

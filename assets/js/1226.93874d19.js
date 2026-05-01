@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunksde_web_book=globalThis.webpackChunksde_web_book||[]).push([[1226],{1226(e,b,s){s.d(b,{createInfoServices:()=>o.v});var o=s(3954);s(2519)}}]);
